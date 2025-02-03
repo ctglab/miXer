@@ -1,0 +1,21 @@
+{
+   "kit": "inference_only_sample_json",
+   "threads": 12,
+   "mixer_support_dir":"/path/to/mixer_support_files/hg__version",
+   "prepared_dataset_dir":"/path/to/preprocessed_dataset/ready_for_TR--level_classifier/",   
+   "par": "pseudoautosomal_regions_hg__version.gz",
+   "ref": "name_of_hg__version_reference_file.fasta",
+   "ref37": "name_of_hg37_reference_superseedes_ref_if_not_empty",
+   
+   "outdir_svm_host": "/path/to/TR--level/inference_output/SVM",
+   "outdir_hmm_host": "/path/to/CNV/filtered_windows/HMM",
+   "outdir_vcf_host": "/path/to/final/VCF",
+   
+   "mixer_support_container":"/app/mixer_support/",
+   "prepared_dataset_container":"/app/prepared_datasets/",
+   "outdir_svm": "/app/svm_processed_output",
+   "outdir_hmm": "/app/hmm_output",
+   "outdir_vcf": "/app/vcf_output"
+}
+
+

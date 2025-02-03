@@ -1,0 +1,12 @@
+{
+	"hidden_layer_units" : [4,6,8],
+	"hidden_layers" : [1,2,3,4],
+	"activation" : ["tanh", "logistic", "relu"],
+	"solver" : ["sgd"],
+	"learning_rate" : ["constant","adaptive"],
+	"learning_rate_init" : [1e-4, 1e-5],
+	"early_stopping" : ["false"],
+	"n_iter_no_change" : [10],
+	"tol" : [35e-4],
+	"max_iter" : [200]
+}
