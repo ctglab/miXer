@@ -7,8 +7,8 @@ FROM continuumio/miniconda3
 WORKDIR /app
 
 # Copy files into the container
-COPY conda_envs/ /app/conda_envs/
-
+COPY . /app
+#@TODO: remove the featureImportance.yml 
 # Create Conda environments from YAML files
 RUN conda env create -f conda_envs/linux/featureImportance.yml && \
     conda env create -f conda_envs/linux/HMM_conda_env.yml && \
@@ -18,21 +18,17 @@ RUN conda env create -f conda_envs/linux/featureImportance.yml && \
     conda env create -f conda_envs/linux/mixerPre.yml
 
 # Make sure that jq is installed, used to load json parameters in .sh entrypoint files
-RUN apt-get update && \
-    apt-get install -y jq
-
 # Copy the entry point scripts into the container
-COPY entrypoints/ /app/entrypoints/
-RUN chmod +x /app/entrypoints/*.sh
-
+# Copy the entry point scripts into the container
 # Set the main entry point script
-COPY main_entrypoint.sh /app/
-RUN chmod +x /app/main_entrypoint.sh
 
 # Since these files change often, docker will run again the later instructions
 # Without being able to use the layer caching mechanism (thus, longer image creation times)
 # Moving them after the env creation step
+RUN apt-get update && \
+    apt-get install -y jq
 
-COPY preprocessingMixer/ /app/preprocessingMixer/
-COPY processing/ /app/processing/
-COPY tmp/ /app/tmp/
+# Copy the entry point scripts into the container
+RUN chmod +x /app/entrypoints/*.sh && \
+  chmod +x /app/main_entrypoint.sh && \
+  mkdir -p /app/tmp/
