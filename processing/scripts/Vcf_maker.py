@@ -25,9 +25,6 @@ parser.add_argument('-ref', '--reference', type=str, default='unspecified', help
 parser.add_argument('-hc', '--hc_only', action='store_true', help ='Boolean flag to use only pre-filtered HC>=0.9 BED windows file for VCF creation. False if not specified.')
 args = parser.parse_args()
 
-#Read the .bed file and parse the data
-#bed_dir = '/home/elia/Scrivania/test_docker_inference_only_output/HMM/hmm_output'#'/NA12878_wt_TARGET/NA12878_wt_TARGET_hmm_application_results/hmm_windows_output'
-#vcf_dir = '/home/elia/Scrivania/test_docker_inference_only_output/VCF/'
 # Determine VCF output directory
 
 if args.output_dir is None:
@@ -97,8 +94,8 @@ for i in range(len(dirs)):
         '##ALT=<ID=DEL,Description="Deletion">',
         '##ALT=<ID=DUP,Description="Duplication">',
         '##FILTER=<ID=PASS,Description="High-quality calls with CS higher than 0.9">',
-        '##FILTER=<ID=MediumQual,Description="Calls with CS between 0.8 and 0.9">',
-        '##FILTER=<ID=LowQual,Description="Calls with CS lower than 0.8">',
+        '##FILTER=<ID=MediumQual,Description="Calls with CS between 0.7 and 0.9">',
+        '##FILTER=<ID=LowQual,Description="Calls with CS lower than 0.7">',
         '##QUAL=<ID=PQS,Number=1,Type=Float,Description="Phred-scaled quality score of the probability of a wrong CNV type assignment">',
         '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant described in this record">',
         '##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">',
