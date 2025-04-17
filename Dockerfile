@@ -10,8 +10,7 @@ WORKDIR /app
 COPY . /app
 #@TODO: remove the featureImportance.yml 
 # Create Conda environments from YAML files
-RUN conda env create -f conda_envs/linux/featureImportance.yml && \
-    conda env create -f conda_envs/linux/HMM_conda_env.yml && \
+RUN conda env create -f conda_envs/linux/HMM_conda_env.yml && \
     conda env create -f conda_envs/linux/mergedBam.yml && \
     conda env create -f conda_envs/linux/miXer_ml_conda_env.yml && \
     conda env create -f conda_envs/linux/mixerSingularity.yml && \
