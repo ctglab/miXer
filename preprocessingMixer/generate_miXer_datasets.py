@@ -200,14 +200,14 @@ if __name__ == "__main__":
 
     #do_mnorm = arguments.nrc_median_normalization
     
-    caseNtrain_df.analysis = caseNtrain_df.analysis.str.replace(' ', '').str.lower()
+    caseNtrain_df.sampleType = caseNtrain_df.sampleType.str.replace(' ', '').str.lower()
     caseNtrain_df.ID = caseNtrain_df.ID.astype(str)
     ##select from config files sample to process for both training and calling
-    both = caseNtrain_df[(caseNtrain_df['analysis'].str.contains(r'case')) & (caseNtrain_df['analysis'].str.contains(r'train'))]
+    both = caseNtrain_df[(caseNtrain_df['sampleType'].str.contains(r'case')) & (caseNtrain_df['sampleType'].str.contains(r'train'))]
     ## training only
-    train_only= caseNtrain_df[caseNtrain_df['analysis'].isin(['train'])]
+    train_only= caseNtrain_df[caseNtrain_df['sampleType'].isin(['train'])]
     ## calling only
-    call_only = caseNtrain_df[caseNtrain_df['analysis'].isin(['case'])]
+    call_only = caseNtrain_df[caseNtrain_df['sampleType'].isin(['case'])]
     #separo per il training gli M,F only dagli MF
     males_females = train_only.loc[train_only["Gender"].isin(["M", "m", "male", "F", "f", "female", "X", "x"])][["ID", "Gender"]]
     #tengo una lista con gli ID delle femmine usate per fare gli MF simulati

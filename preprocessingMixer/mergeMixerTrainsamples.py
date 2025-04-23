@@ -45,7 +45,7 @@ def check_divergence(fixed_maleList,fixed_femaleList):
 def mergeNindex(label,final,fP,mP,MCF,th):
      pysam.merge('-@',th,'-f', final, fP, mP)
      pysam.index('-@',th,final)
-     updatedConfigFile = pd.DataFrame(data={'ID':[label],'bamPath':[final],'Gender':['MF'],'analysis':['train']})
+     updatedConfigFile = pd.DataFrame(data={'ID':[label],'bamPath':[final],'Gender':['MF'],'sampleType':['train']})
      return updatedConfigFile   
 
 
@@ -68,9 +68,9 @@ if __name__ == "__main__":
     ########### DECLARE VARIABLES:
     
     ###inputs:
-    conf = pd.read_table(arguments.config, names= ['ID','bamPath','Gender','analysis'], sep="\t")
-    conf.analysis = conf.analysis.str.replace(' ', '').str.lower()
-    conf_df = conf[conf['analysis'].str.contains(r'train')].reset_index(drop=True)
+    conf = pd.read_table(arguments.config, names= ['ID','bamPath','Gender','sampleType'], sep="\t")
+    conf.sampleType = conf.sampleType.str.replace(' ', '').str.lower()
+    conf_df = conf[conf['sampleType'].str.contains(r'train')].reset_index(drop=True)
 
     ###outputs:
     configBasename = os.path.basename(arguments.config)

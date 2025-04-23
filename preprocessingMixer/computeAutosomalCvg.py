@@ -83,12 +83,12 @@ if __name__ == "__main__":
        print("temp folder created")
     
     ####inputs:
-    samples_df = pd.read_table(arguments.config, names= ['ID','bamPath','Gender','analysis'], sep="\t")
+    samples_df = pd.read_table(arguments.config, names= ['ID','bamPath','Gender','sampleType'], sep="\t")
     samples_df["bamPath"] = samples_df['bamPath'].apply(lambda x: os.path.join(arguments.bam_dir, x))
-    samples_df.analysis = samples_df.analysis.str.replace(' ', '').str.lower()
+    samples_df.sampleType = samples_df.sampleType.str.replace(' ', '').str.lower()
     samples_df.ID = samples_df.ID.astype(str)
     ##select from config files sample to process for both training and calling
-    samples = samples_df[samples_df['analysis'].str.contains(r'train')]
+    samples = samples_df[samples_df['sampleType'].str.contains(r'train')]
     target_df=pd.read_csv(arguments.target, sep="\t", index_col=False, header=None)
     target_autosomal = fix_target(target_df)
     target_out = os.path.join(tmp_folder,'target_tmp.bed')
