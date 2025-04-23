@@ -152,13 +152,13 @@ def addclass_ddup(ddup_df):
 
 ###################################################MAIN####################################################
 #### file di config deve contenere:
-#  ID path_bam M/F ctrl,case/train
+#  ID path_bam M/F c,t/train #c = controlli, t = casi, train= sample per addestramento svm
 #  i.e:
-#  GM01 /path/to/file.bam F ctrl
-#  GM02 /path/to/file1.bam F case
-#  GM03 /path/to/file2.bam M case,train
+#  GM01 /path/to/file.bam F c
+#  GM02 /path/to/file1.bam F t
+#  GM03 /path/to/file2.bam M t,train
 #
-#  idea: separare in 3 variabili all'inizio (ctrl, caseNtrain)
+#  idea: separare in 3 variabili all'inizio (c, caseNtrain)
 #  M+F si aggiungono a caseNtrain
 ####
 
@@ -203,11 +203,11 @@ if __name__ == "__main__":
     caseNtrain_df.sampleType = caseNtrain_df.sampleType.str.replace(' ', '').str.lower()
     caseNtrain_df.ID = caseNtrain_df.ID.astype(str)
     ##select from config files sample to process for both training and calling
-    both = caseNtrain_df[(caseNtrain_df['sampleType'].str.contains(r'case')) & (caseNtrain_df['sampleType'].str.contains(r'train'))]
+    both = caseNtrain_df[(caseNtrain_df['sampleType'].str.contains(r't')) & (caseNtrain_df['sampleType'].str.contains(r'train'))]
     ## training only
     train_only= caseNtrain_df[caseNtrain_df['sampleType'].isin(['train'])]
     ## calling only
-    call_only = caseNtrain_df[caseNtrain_df['sampleType'].isin(['case'])]
+    call_only = caseNtrain_df[caseNtrain_df['sampleType'].isin(['t'])]
     #separo per il training gli M,F only dagli MF
     males_females = train_only.loc[train_only["Gender"].isin(["M", "m", "male", "F", "f", "female", "X", "x"])][["ID", "Gender"]]
     #tengo una lista con gli ID delle femmine usate per fare gli MF simulati

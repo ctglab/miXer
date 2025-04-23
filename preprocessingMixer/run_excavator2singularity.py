@@ -113,13 +113,14 @@ if __name__ == "__main__":
     samples_df = pd.read_table(arguments.config, sep="\t")
     samples_df.sampleType = samples_df.sampleType.str.replace(' ', '').str.lower()
     ##select from config files female controls
-    samples_ctrl = samples_df[(samples_df['sampleType'].str.contains(r'ctrl'))].reset_index(drop=True)
+    samples_ctrl = samples_df[samples_df['sampleType'] == 'c'].reset_index(drop=True)
     no_controls = False
     if samples_ctrl.shape[0] == 0:
         no_controls = True
-    samples_case = samples_df[(samples_df['sampleType'].str.contains(r'case'))].reset_index(drop=True) 
+
+    samples_case = samples_df[samples_df['sampleType'] == 't'].reset_index(drop=True)
     if samples_case.empty:
-       samples_case = samples_df[(samples_df['sampleType'].str.contains(r'train'))].reset_index(drop=True)[:1]
+        samples_case = samples_df[samples_df['sampleType'] == 'train'].reset_index(drop=True)[:1]
     ##script dir containing sif file
     #script_dir = os.path.realpath(os.path.dirname(__file__))
 
