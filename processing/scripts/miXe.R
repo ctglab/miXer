@@ -368,7 +368,7 @@ for(sample in trainx_processed_samples){
   
   list2env(result_df, envir = environment())
   
-  write.csv(result_df, file = "result_df.csv", row.names = FALSE)
+  #write.csv(result_df, file = "result_df.csv", row.names = FALSE)
   
   #save all predictions and probability results
   savecols <- c(savecols, c(predictions_column_name, "hmm_state", "Mappability"))
