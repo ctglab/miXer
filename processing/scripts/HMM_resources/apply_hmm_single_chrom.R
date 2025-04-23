@@ -19,7 +19,6 @@
 #' @param chr The chromosome on which to train the HMM.
 #' @param predictions_column_name The name of the column in the data frame `curr_data` that contains the ML caller's predictions.
 #' @param post_prob_col_names A character vector containing the column names for the posterior probabilities.
-#' @param output_folder The path to the output folder where the trained HMM transition and emission probabilities will be saved.
 #' @param unique_observations A character vector containing the unique observations for the HMM.
 #' @param verbose A logical value indicating whether to print verbose output.
 #'
@@ -33,7 +32,7 @@ source(normalizePath(file.path(resource_folder, "get_untrained_hmm.R")))
 source(normalizePath(file.path(resource_folder, "get_untrained_hmm_MChrX.R")))
 
 apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
-                                   predictions_column_name, output_folder,
+                                   predictions_column_name,
                                    unique_observations, is_male, prefilter_low_mapp, mapp_thr,
                                    verbose = FALSE){
   
@@ -56,19 +55,7 @@ apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
     base_hmm <- get_untrained_hmm(unique_observations)
   }
   trained_hmm <- train_hmm(curr_data, base_hmm, hmm_bw_max_iter, bw_delta, chr, predictions_column_name)
-  #save trained HMM transition and emission matrices
-  #define transition and emission probabilities output folder
-  transProbs_out_folder <- normalizePath(file.path(output_folder, "TransProbs"), mustWork = FALSE)
-  if (!dir.exists(transProbs_out_folder)){
-    dir.create(transProbs_out_folder)
-  }
-  emissProbs_out_folder <- normalizePath(file.path(output_folder, "EmissProbs"), mustWork = FALSE)
-  if (!dir.exists(emissProbs_out_folder)){
-    dir.create(emissProbs_out_folder)
-  }
-  #save transition and emission probabilities
-  saveRDS(trained_hmm$hmm$transProbs, paste0(transProbs_out_folder, paste0("transProbs_bw", paste0(hmm_bw_max_iter, paste0("_", chr, ".rds")))))
-  saveRDS(trained_hmm$hmm$emissionProbs, paste0(emissProbs_out_folder, paste0("emissProbs_bw", paste0(hmm_bw_max_iter, paste0("_", chr, ".rds")))))
+  
   #get sequence of states and states posterior probabilities
   if (verbose){
     print(paste("Getting most probable sequence of states for chromosome", chr))

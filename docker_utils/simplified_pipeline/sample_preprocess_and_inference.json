@@ -1,0 +1,28 @@
+{
+   "exp_id": "preprocessing_and_inference_sample_json",
+   "threads": 12,
+   "mixer_resources_dir": "/path/to/resource_dir/contains_target_config_premade_controlRdata/",
+   "mixer_support_dir": "/path/to/mixer_support_files/hg__version",
+   "excavator2_support_dir": "/path/to/excavator_support_files/hg__version",
+   "fasta_dir": "/path/to/fasta_files",
+   "bam_dir": "/path/to/bam_data/",
+   "sing_dir": "/path/to/mosdepth/and/excavator2/sifs",
+      
+   "config": "sample_config.config",
+   "target": "target_file.bed",
+   "par": "pseudoautosomal_regions_hg__version.gz",
+   "xlr": "XLRgenes_hg__version.bed.gz",
+   "seg": "Segmental_dups_hg__version.gz",
+   "map": "mappability__hg__version.bw",
+   "gap": "Gap_hg__version.txt",
+   "centro": "CentromerePosition_hg__version.txt",
+   "chrom": "ChromosomeCoordinate_hg__version.txt",
+   "ref": "name_of_hg__version_reference_file.fasta",
+   "ref37": "name_of_hg37_reference_superseedes_ref_if_not_empty",
+   "premade_control_rdata": "/path/to/control/data/if_present/",
+   
+   "main_outdir_host": "/path/to/mixer_outputs/"
+
+}
+
+

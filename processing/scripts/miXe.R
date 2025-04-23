@@ -258,29 +258,23 @@ for(sample in trainx_processed_samples){
   #get dataframes path
   data_path = samples_to_process[[sample]]
   
-  output_dir <- file.path(main_output_dir, sample)
   pat <- "*_pred.txt*"
   filename <- sample
   
-  #if not present, make output directory
-  if (!dir.exists(output_dir)){
-    dir.create(output_dir)
-  }
-  
   #must save the processed dataframes with the script's result
-  result_df_save_folder <- file.path(output_dir, paste0(sample, "_hmm_application_results"))
+  result_df_save_folder <- file.path(main_output_dir, paste0(sample))
 
   if (!dir.exists(result_df_save_folder)){
     dir.create(result_df_save_folder)
   }
   
-  #hmm matrices output folder
-  out_hmm <- file.path(result_df_save_folder, "trained_hmm_matrices")
+  ##hmm matrices output folder
+  #out_hmm <- file.path(result_df_save_folder, "trained_hmm_matrices")
 
   #if not present, make directory
-  if (!dir.exists(out_hmm)){
-    dir.create(out_hmm)
-  }
+  #if (!dir.exists(out_hmm)){
+  #  dir.create(out_hmm)
+  #}
   
   #there will be only one dataframe name that will match the pattern
   dataframe_name <- list.files(data_path, pattern=pat, all.files=FALSE,full.names=FALSE)
@@ -304,12 +298,6 @@ for(sample in trainx_processed_samples){
   predictions_column_name <- dataframe_colnames[grepl("*_pred$", dataframe_colnames)]
   
   #print(paste("Training the HMM with max.", paste(hmm_bw_max_iter, paste("Baum-Welch algorithm iterations and", paste(bw_delta, "minimum parameter update value") ) )))
-  
-  #if not present, make directory
-  hmm_matrices_output_folder <- file.path(out_hmm, paste0("BW_", hmm_bw_max_iter, "_Delta_", bw_delta))
-  if (!dir.exists(hmm_matrices_output_folder)){
-    dir.create(hmm_matrices_output_folder)
-  }
   
   #result_df <- data.frame()
   
@@ -340,7 +328,7 @@ for(sample in trainx_processed_samples){
     results <- parallel::mclapply(1:length(single_chroms),# *
                                   function(idx) {
                                     res <- apply_hmm_single_chrom(single_chroms[[idx]], hmm_bw_max_iter, bw_delta,
-                                                                  predictions_column_name, hmm_matrices_output_folder,
+                                                                  predictions_column_name,
                                                                   u_obs, is_male, prefilter_low_mapp, mapp_thr)
                                     return(res)
                                   },
@@ -405,15 +393,9 @@ for(sample in trainx_processed_samples){
   print(paste("Sample", paste(sample, paste("| ", paste(nrow(hc09Windows), " identified PASS CNV\n ")))))
   print_window_number(hc09Windows)
   
-  #save HMM windows
-  #if not present, create output folder
-  out_windows <- file.path(result_df_save_folder, "hmm_windows_output")
-  if (!dir.exists(out_windows)){
-    dir.create(out_windows)
-  }
-  
-  filepath_allwindows <- file.path(out_windows, paste0(filename, paste0("_hmm_bw", paste0(hmm_bw_max_iter, "_windows.bed"))))
-  filepath_hc09windows <-file.path(out_windows, paste0(filename, paste0("_hmm_bw", paste0(hmm_bw_max_iter, "_HC09windows.bed"))))
+  #save HMM windows  
+  filepath_allwindows <- file.path(result_df_save_folder, paste0(filename, paste0("_hmm_bw", paste0(hmm_bw_max_iter, "_windows.bed"))))
+  filepath_hc09windows <-file.path(result_df_save_folder, paste0(filename, paste0("_hmm_bw", paste0(hmm_bw_max_iter, "_PASS_ONLY_windows.bed"))))
   
   #print("Saving windows")
   write.table(windows, file=filepath_allwindows, quote = FALSE, sep = "\t", row.names = FALSE)
