@@ -4,7 +4,8 @@ import os
 import sys
 
 VALID_GENDERS = {"m", "f", "mf"}
-VALID_ANALYSIS = {"case", "ctrl"}
+#VALID_ANALYSIS = {"case", "ctrl"}
+VALID_ANALYSIS = {"T", "C"}
 
 parser = argparse.ArgumentParser(description="Validate and normalize config file for EXCAVATOR2 step")
 parser.add_argument("-cf", "--config", required=True, help="Path to original config file")
@@ -16,7 +17,7 @@ os.makedirs(args.output_dir, exist_ok=True)
 
 # Load config
 try:
-    df = pd.read_csv(args.config, sep="\t", names=["ID", "bamPath", "Gender", "analysis"], dtype=str)
+    df = pd.read_csv(args.config, sep="\t", names=["ID", "bamPath", "Gender", "sampleType"], dtype=str)
 except Exception as e:
     sys.exit(f"Failed to read config file: {e}")
 
