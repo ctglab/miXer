@@ -25,18 +25,18 @@ except Exception as e:
 df["ID"] = df["ID"].str.strip()
 df["bamPath"] = df["bamPath"].str.strip()
 df["Gender"] = df["Gender"].str.strip().str.lower()
-df["analysis"] = df["analysis"].str.strip().str.lower()
+df["sampleType"] = df["sampleType"].str.strip().str.lower()
 
-# Validation: Gender and Analysis
+# Validation: Gender and sampleType
 invalid_gender = df[~df["Gender"].isin(VALID_GENDERS)]
-invalid_analysis = df[~df["analysis"].isin(VALID_ANALYSIS)]
+invalid_analysis = df[~df["sampleType"].isin(VALID_ANALYSIS)]
 
 if not invalid_gender.empty:
     print("Invalid gender values found:")
     print(invalid_gender)
 
 if not invalid_analysis.empty:
-    print("Invalid analysis values found:")
+    print("Invalid sampleType values found:")
     print(invalid_analysis)
 
 if not invalid_gender.empty or not invalid_analysis.empty:
