@@ -14,7 +14,7 @@ get_untrained_hmm_MChrX <- function(unique_observations){
   #get hmm states
   states <- get_hmm_states_MChrX(unique_observations)
   #get the symbols for the states emissions
-  symbols <- get_hmm_emission_symbols_MChrX(unique_observations)
+  symbols <- get_hmm_emission_symbols_MChrX()
   #get the starting probabilities of the hmm states
   start_probs <- get_hmm_starting_probabilities_MChrX()
   #get the base transition probability matrix
@@ -54,16 +54,8 @@ get_hmm_states_MChrX <- function(unique_observations){
 #'
 #' @return A vector containing the emission symbols for the HMM.
 #'
-get_hmm_emission_symbols_MChrX <- function(unique_observations){
-  if ("-2" %in% unique_observations){
-    symbols = c("-2", "-1","0", "1")
-    if ("2" %in% unique_observations){
+get_hmm_emission_symbols_MChrX <- function(){
       symbols = c("-2", "-1","0", "1", "2")
-    }
-  }
-  else{
-    symbols = c("-1","0", "1")
-  }
   return(symbols)
 }
 

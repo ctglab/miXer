@@ -1,4 +1,10 @@
 #!/bin/bash
+set -euo pipefail
+mkdir -p /app/logs
+
+LOGFILE="/app/logs/pipeline_$(date +'%Y%m%d_%H%M%S').log"
+exec > >(tee -a "$LOGFILE") 2>&1
+
 # Get Conda home directory
 CONDA_HOME=$(conda info --base)
 PREPR_SCRIPT_DIR="/app/preprocessingMixer"

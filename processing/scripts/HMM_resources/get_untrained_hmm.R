@@ -13,7 +13,7 @@ get_untrained_hmm <- function(unique_observations){
   #get hmm states
   states <- get_hmm_states(unique_observations)
   #get the symbols for the states emissions
-  symbols <- get_hmm_emission_symbols(unique_observations)
+  symbols <- get_hmm_emission_symbols()
   #get the starting probabilities of the hmm states
   start_probs <- get_hmm_starting_probabilities()
   #get the base transition probability matrix
@@ -45,16 +45,8 @@ get_hmm_states <- function(unique_observations){
 #'
 #' @return A vector of emission symbols representing the possible values emitted by the states.
 #'
-get_hmm_emission_symbols <- function(unique_observations){
-  if ("-2" %in% unique_observations){
-    symbols = c("-2", "-1","0", "1")
-    if ("2" %in% unique_observations){
-      symbols = c("-2", "-1","0", "1", "2")
-    }
-  }
-  else{
-    symbols = c("-1","0", "1")
-  }
+get_hmm_emission_symbols <- function(){
+  symbols = c("-2", "-1","0", "1", "2")
   return(symbols)
 }
 

@@ -25,6 +25,9 @@ get_hmm_states_by_chromosome <- function(y, trained_hmm, predictions_column_name
     #get current chromosome positions
     curr_chrom_pos <- subset(y, y$Chr == chr)
     curr_chrom_pos <- curr_chrom_pos[order(curr_chrom_pos$Start), ]
+
+    num_trs <- nrow(curr_chrom_pos)
+      
     #calculate distance between exons
     curr_chrom_pos$Position <- (curr_chrom_pos$End - curr_chrom_pos$Start)*0.5
     curr_chrom_pos$Position <- curr_chrom_pos$Start + curr_chrom_pos$Position
@@ -61,10 +64,12 @@ get_hmm_states_by_chromosome <- function(y, trained_hmm, predictions_column_name
       
       #estimate the most probable sequence of states using the Viterbi algorithm
       mpss <- as.data.frame(viterbi(trained_hmm$hmm, curr_observations))
+
       #estimate each state's posterior probability
       post_probs <- as.data.frame(t(posterior(trained_hmm$hmm, curr_observations)))
       mpss = as.data.frame(mpss[-1,])
       post_probs = as.data.frame(post_probs[-1,])
+      
       colnames(mpss) <- c("hmm_state")
       if (is_male == FALSE || !(chr %in% c("chrX", "chrx", "ChrX", "Chrx", "X", "x")) ){
         #3-state HMM has no DDEL_post_prob_column, must set to zero
@@ -73,9 +78,11 @@ get_hmm_states_by_chromosome <- function(y, trained_hmm, predictions_column_name
       colnames(post_probs) <- c("DDEL_post_prob", "DEL_post_prob", "WT_post_prob", "DUP_post_prob")
       all_states <- rbind(all_states, mpss)
       all_post_probs <- rbind(all_post_probs, post_probs)
-    }
+      }
   }
+  
   result_df <- cbind(y, all_states)
   result_df <- cbind(result_df, all_post_probs)
+
   return(result_df)
 }

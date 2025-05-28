@@ -110,7 +110,7 @@ docker cp $(docker ps -q -n=1):$MAIN_OUTPUT_DIR_CONTAINER "$MAIN_OUTDIR_HOST"
 # Stop the running container
 docker stop $(docker ps -q -n=1)
 # Remove the container
-docker container rm -f $(docker ps -q -n=1)
+#docker container rm -f $(docker ps -q -n=1)
 
 
 

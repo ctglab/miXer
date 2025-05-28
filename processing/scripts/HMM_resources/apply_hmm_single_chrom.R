@@ -38,12 +38,10 @@ apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
   
   curr_data <- droplevels(curr_data)
   curr_data_copy <- curr_data
-    
   if (prefilter_low_mapp == TRUE) {
     #print("Prefiltering SVM observations: removing low mappability positions for HMM training and inference")
     curr_data <- subset(curr_data, Mappability > mapp_thr) # Keep only rows with good quality
   }
-  
   chr <- as.character(unique(curr_data$Chr))
   if (verbose){
     print(paste("Training the HMM on", chr) )
@@ -55,7 +53,6 @@ apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
     base_hmm <- get_untrained_hmm(unique_observations)
   }
   trained_hmm <- train_hmm(curr_data, base_hmm, hmm_bw_max_iter, bw_delta, chr, predictions_column_name)
-  
   #get sequence of states and states posterior probabilities
   if (verbose){
     print(paste("Getting most probable sequence of states for chromosome", chr))
@@ -66,30 +63,28 @@ apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
   #casting factor columns to character (no idea why factors pop out for some columns, TODO check)
   i <- sapply(result_df, is.factor)
   result_df[i] <- lapply(result_df[i], as.character)
-  
   i <- sapply(curr_data_copy, is.factor)
   curr_data_copy[i] <- lapply(curr_data_copy[i], as.character)
-  
   # Ensure the "Chr" column has consistent types in both data frames
   curr_data_copy$Chr <- as.character(curr_data_copy$Chr)
   result_df$Chr <- as.character(result_df$Chr)
-  
   # Find rows in curr_data_copy that are not in result_df based on Chr, Start, and End
   missing_rows <- curr_data_copy[
     !paste(curr_data_copy$Chr, curr_data_copy$Start, curr_data_copy$End) %in%
       paste(result_df$Chr, result_df$Start, result_df$End),
   ]
-
   # Initialize an NA-filled data frame for missing rows with the structure of result_df
-  missing_rows_na <- missing_rows  # Start with the full structure of curr_data_copy
   additional_columns <- setdiff(names(result_df), names(curr_data_copy))  # Find extra columns in result_df
-  missing_rows_na[additional_columns] <- NA  # Add the extra columns with NA values
-
-  # Combine result_df with the NA-filled missing rows
-  result_df <- rbind(result_df, missing_rows_na)
-  
+  if (nrow(missing_rows) > 0 && length(additional_columns) > 0) {
+    missing_rows_na <- missing_rows  # Start with the full structure of curr_data_copy
+    for (col in additional_columns) {
+      missing_rows_na[[col]] <- rep(NA, nrow(missing_rows_na))
+    }
+    # Combine result_df with the NA-filled missing rows
+    result_df <- rbind(result_df, missing_rows_na)
+  }
+  #missing_rows_na[additional_columns] <- NA  # Add the extra columns with NA values
   # Sort by Chr, Start, and End
   result_df <- result_df[order(result_df$Chr, result_df$Start, result_df$End), ]
-
   return(result_df)
 }
