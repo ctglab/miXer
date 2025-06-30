@@ -74,7 +74,9 @@ Two sets of support files are required: one for EXCAVATOR2 and one for miXer.
 - **CentromerePosition_hgVersion.txt**: Containing the coordinates of the centromeres for the considered human genome assembly.
 - **ChromosomeCoordinate_hgVersion.txt**: Containing the coordinates of chromosomes.
 - **Gap_hgVersion.txt**: Containing gap annotations.
-- **mappability_track_hgVersion.bw**: Required in order to annotate each target region with their average mappability.
+- **mappability_track_hgVersion.bw**: Encodes genome-wide mappability.
+
+The BigWig files encode genome-wide mappability for hg19 and hg38 assemblies and are required in order to annotate each target region. They were produced with the GEM mapper (Derrien et al., 2012) from the GEM suite (https://gemlibrary.sourceforge.net/), using 100 bp sliding windows and allowing up to two mismatches.
 
 #### miXer-specific support
 - **GRC_pseudoautosomal_regions_hgVersion.gz**: Annotation track contraining PAR regions
