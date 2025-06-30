@@ -125,7 +125,7 @@ Where:
 When running miXer with the Apptainer image, use the provided `run_apptainer_preprocessing_and_inference.sh` script:
 
 ```bash
-./path/to/apptainer_utils/run_apptainer_preprocessing_and_inference.sh <config.json> <apptainer_image.sif>
+./path/to/utils/apptainer_utils/run_apptainer_preprocessing_and_inference.sh <config.json> <apptainer_image.sif>
 ```
 
 - `<config.json>`: compiled miXer JSON configuration (same schema as Docker).
