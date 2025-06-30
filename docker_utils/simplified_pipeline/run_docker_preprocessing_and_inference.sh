@@ -2,14 +2,18 @@
 
 # Read variables from JSON configuration file
 
-# Check if the configuration file path is provided as a command line argument
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <config_path>"
+# Usage:
+#   ./run.sh <config_path> [DOCKER_IMAGE]
+#   e.g. ./run_docker_preprocessing_and_inference.sh config.json
+#        ./run_docker_preprocessing_and_inference.sh config.json myrepo/mixer:dev
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+    echo "Usage: $0 <config_path> [DOCKER_IMAGE]"
     exit 1
 fi
 
-# Set the CONFIG_PATH from the command line argument
 CONFIG_PATH="$1"
+IMAGE="${2:-mixer_docker:latest}"
 
 # Check if the configuration file exists
 if [ ! -f "$CONFIG_PATH" ]; then
@@ -110,7 +114,7 @@ docker cp $(docker ps -q -n=1):$MAIN_OUTPUT_DIR_CONTAINER "$MAIN_OUTDIR_HOST"
 # Stop the running container
 docker stop $(docker ps -q -n=1)
 # Remove the container
-#docker container rm -f $(docker ps -q -n=1)
+docker container rm -f $(docker ps -q -n=1)
 
 
 

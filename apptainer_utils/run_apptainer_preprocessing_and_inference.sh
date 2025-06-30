@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Check usage
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <config_path>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <config_path> <mixer_apptainer_sif>"
     exit 1
 fi
 
 CONFIG_PATH="$1"
+MIXER_APPTAINER_SIF="$2"
 
 # Check if config file exists
 if [ ! -f "$CONFIG_PATH" ]; then
@@ -14,10 +15,10 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-# Load variables from JSON config
-eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) MIXER_SUPPORT_DIR=\(.mixer_support_dir) EXCAVATOR2_SUPPORT_DIR=\(.excavator2_support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir) MIXER_APPTAINER_SIF=\(.mixer_apptainer_sif)"' "$CONFIG_PATH")"
+# Load variables from JSON config (omit mixer_apptainer_sif)
+eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) MIXER_SUPPORT_DIR=\(.mixer_support_dir) EXCAVATOR2_SUPPORT_DIR=\(.excavator2_support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
 
-# Create per-run temp workspace - scripts will write temporary files here
+# Create per-run temp workspace
 TEMP_DIR="./temp_${EXP_ID}"
 FINAL_OUTPUT_DIR="${MAIN_OUTDIR_HOST}/${EXP_ID}"
 
@@ -47,10 +48,8 @@ GAP_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$GAP")"
 CENTRO_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
 CHROM_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
 REF_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF")"
-REF_STRING="${REF37:-$REF}"
 
-# Check if REF37 is empty before joining
-# REF_STRING is used for VCF creation
+# Handle REF37 override
 if [ -n "$REF37" ]; then
   REF37_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF37")"
   REF_STRING="$REF37"
@@ -59,7 +58,7 @@ else
   REF_STRING="$REF"
 fi
 
-# Check if PREMADE_CONTROL_RDATA is empty before joining
+# Handle PREMADE_CONTROL_RDATA
 if [ -n "$PREMADE_CONTROL_RDATA" ]; then
   PREMADE_CONTROL_RDATA_PATH="${MIXER_RESOURCES_CONTAINER%/}/$(basename "$PREMADE_CONTROL_RDATA")"
 else
@@ -78,7 +77,7 @@ else
     fi
 fi
 
-# Run Apptainer container
+# Run Apptainer container with provided SIF
 apptainer exec \
   --bind "$TEMP_DIR/exca2_output_${EXP_ID}":"/app/exca2_output_${EXP_ID}" \
   --bind "$TEMP_DIR/inference_ready_datasets_${EXP_ID}":"/app/inference_ready_datasets_${EXP_ID}" \
@@ -111,7 +110,6 @@ apptainer exec \
   --env MAIN_OUTPUT_DIR_CONTAINER="$MAIN_OUTPUT_DIR_CONTAINER" \
   "$MIXER_APPTAINER_SIF" \
   /bin/bash /app/entrypoints/mixer_apptainer_preprocessing_and_inference.sh
-
 
 echo "Copying results to final output dir: $FINAL_OUTPUT_DIR"
 

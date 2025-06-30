@@ -82,7 +82,7 @@ One file is required:
 - **GRC_pseudoautosomal_regions_hgVersion.gz**: Annotation track contraining PAR regions
 
 ## miXer Configuration - EXCAVATOR2 Singularity file
-To run miXer, the `.sif` file of EXCAVATOR2 is required. Instructions to build it are to be found here (...)
+At the moment, to run miXer, the `.sif` file of EXCAVATOR2 is required. Instructions on how to obtain it are to be found [in EXCAVATOR2 repository.](https://github.com/ctglab/excavator2)
 
 # Running miXer: Docker Image
 To run miXer using the Docker image, a JSON file must be compiled as such:<br>
@@ -108,21 +108,35 @@ To run miXer using the Docker image, a JSON file must be compiled as such:<br>
 | `premade_control_rdata`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
 | `main_outdir_host`        | string: `/path/to/output_directory/`         | Path to output directory, will be created if not existing.                                   |
 
-miXer can then be run using the provided `run_docker_preprocessing_and_inference.sh` bash script, which requires the previously compiled JSON file.
-The file, along with an empty JSON template can be found in `docker_utils/simplified_pipeline/preprocessing_and_inference/`.<br> <br> Example command:
-`./path/to/docker_utils/simplified_pipeline/run_docker_preprocessing_and_inference.sh /path/to/docker_JSON_File.json`
+miXer can then be run using the provided `run_docker_preprocessing_and_inference.sh` bash script, which requires the previously compiled JSON file:
+
+```bash
+./path/to/docker_utils/simplified_pipeline/run_docker_preprocessing_and_inference.sh <config.json> [DOCKER_IMAGE]
+```
+Where:
+- `<config.json>`: Path to the JSON configuration file (required).
+- `[DOCKER_IMAGE]`: Docker image `name:tag` to use (optional). 
+  - Defaults to `mixer_docker:latest` if omitted.
+- To use a custom image, pass it as the second argument:
+```bash
+./run_docker_preprocessing_and_inference.sh /path/to/config.json myrepo/mixer:dev
+```
+
+An empty JSON configuration file template can be found in `docker_utils/simplified_pipeline/preprocessing_and_inference/`.
+
 
 # Running miXer: Apptainer Image
-Similarly to the Docker image case, when running miXer using the Apptainer image, a configuration JSON file miust be compiled. The required fields are the same as those used for the Docker image, with the addition of one field:<br>
-| JSON Variable Name      | Value                                                        | Meaning                                               |
-|-------------------------|--------------------------------------------------------------|-------------------------------------------------------|
-| `mixer_apptainer_sif`   | string: `/path/to/mixer_apptainer.sif` | Path to the generated miXer Apptainer `.sif` image     |
+When running miXer with the Apptainer image, use the provided `run_apptainer_preprocessing_and_inference.sh` script:
 
-Similarly to the Docker version, a bash script is provided to launch
-miXer: `run_apptainer_preprocessing_and_inference.sh`, which requires the previously compiled JSON configuration file.
-The file can be found in `apptainer_utils/` and can be used to run the tool with the following command:<br>
+```bash
+./path/to/apptainer_utils/run_apptainer_preprocessing_and_inference.sh <config.json> <apptainer_image.sif>
+```
 
-`./path/to/apptainer_utils/run_apptainer_preprocessing_and_inference.sh /path/to/apptainer_configuration_JSON_File.json`
+- `<config.json>`: compiled miXer JSON configuration (same schema as Docker).
+- `<apptainer_image.sif>`: Apptainer image file.
+
+As for the Docker image version, an empty JSON configuration file template can be found in in `apptainer_utils/preprocessing_and_inference/`.
+
 
 # miXer Outputs
 
