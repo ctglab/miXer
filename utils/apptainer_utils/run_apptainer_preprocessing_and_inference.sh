@@ -16,7 +16,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
 fi
 
 # Load variables from JSON config (omit mixer_apptainer_sif)
-eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) MIXER_SUPPORT_DIR=\(.mixer_support_dir) EXCAVATOR2_SUPPORT_DIR=\(.excavator2_support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
 
 # Create per-run temp workspace
 TEMP_DIR="./temp_${EXP_ID}"
@@ -32,8 +32,7 @@ mkdir -p "$TEMP_DIR/exca2_output_${EXP_ID}" \
 
 # Define container paths
 MIXER_RESOURCES_CONTAINER="/app/mixer_resources/"
-MIXER_SUPPORT_CONTAINER="/app/mixer_support/"
-EXCAVATOR2_SUPPORT_CONTAINER="/app/excavator2_support/"
+SUPPORT_CONTAINER="/app/support/"
 FASTA_DIR_CONTAINER="/app/fasta_dir/"
 BAM_DIR_CONTAINER="/app/bams/"
 SING_DIR_CONTAINER="/app/singfiles/"
@@ -42,11 +41,11 @@ MAIN_OUTPUT_DIR_CONTAINER="/app/mixer_outputs/"
 # File paths inside the container
 MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${CONFIG}"
 MIXER_RESOURCES_TARGET="${MIXER_RESOURCES_CONTAINER}${TARGET}"
-PAR_PATH="${MIXER_SUPPORT_CONTAINER%/}/$(basename "$PAR")"
-MAP_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$MAP")"
-GAP_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$GAP")"
-CENTRO_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
-CHROM_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
+PAR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$PAR")"
+MAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$MAP")"
+GAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$GAP")"
+CENTRO_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
+CHROM_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
 REF_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF")"
 
 # Handle REF37 override
@@ -86,8 +85,8 @@ apptainer exec \
   --bind "$TEMP_DIR/mixer_vcfs":"/app/mixer_vcfs" \
   --bind "$TEMP_DIR/mixer_outputs/${EXP_ID}":"/app/mixer_outputs/${EXP_ID}" \
   --bind "$MIXER_RESOURCES_DIR":"$MIXER_RESOURCES_CONTAINER" \
-  --bind "$MIXER_SUPPORT_DIR":"$MIXER_SUPPORT_CONTAINER" \
-  --bind "$EXCAVATOR2_SUPPORT_DIR":"$EXCAVATOR2_SUPPORT_CONTAINER" \
+  --bind "$MIXER_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
+  --bind "$EXCAVATOR2_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
   --bind "$FASTA_DIR":"$FASTA_DIR_CONTAINER" \
   --bind "$BAM_DIR":"$BAM_DIR_CONTAINER" \
   --bind "$SING_DIR":"$SING_DIR_CONTAINER" \

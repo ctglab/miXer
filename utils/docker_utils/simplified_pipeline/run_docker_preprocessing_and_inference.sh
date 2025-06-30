@@ -21,11 +21,11 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) MIXER_SUPPORT_DIR=\(.mixer_support_dir) EXCAVATOR2_SUPPORT_DIR=\(.excavator2_support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+
 
 MIXER_RESOURCES_CONTAINER="/app/mixer_resources/"
-MIXER_SUPPORT_CONTAINER="/app/mixer_support/"
-EXCAVATOR2_SUPPORT_CONTAINER="/app/excavator2_support/"
+SUPPORT_CONTAINER="/app/support/"
 FASTA_DIR_CONTAINER="/app/fasta_dir/"
 BAM_DIR_CONTAINER="/app/bams/"
 SING_DIR_CONTAINER="/app/singfiles/"
@@ -35,31 +35,15 @@ MAIN_OUTPUT_DIR_CONTAINER="/app/mixer_outputs/"
 # Creating in-image paths for files
 MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${CONFIG}"
 MIXER_RESOURCES_TARGET="${MIXER_RESOURCES_CONTAINER}${TARGET}"
-PAR_PATH="${MIXER_SUPPORT_CONTAINER%/}/$(basename "$PAR")"
-#XLR_PATH="${MIXER_SUPPORT_CONTAINER%/}/$(basename "$XLR")"
-#SEG_PATH="${MIXER_SUPPORT_CONTAINER%/}/$(basename "$SEG")"
-MAP_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$MAP")"
-GAP_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$GAP")"
-CENTRO_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
-CHROM_PATH="${EXCAVATOR2_SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
+PAR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$PAR")"
+#XLR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$XLR")"
+#SEG_PATH="${SUPPORT_CONTAINER%/}/$(basename "$SEG")"
+MAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$MAP")"
+GAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$GAP")"
+CENTRO_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
+CHROM_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
 REF_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF")"
 
-
-: '
-echo "DEBUG_OUT: $DEBUG_OUT"
-echo "MIXER_RESOURCES_CONFIG: $MIXER_RESOURCES_CONFIG"
-echo "MIXER_RESOURCES_TARGET: $MIXER_RESOURCES_TARGET"
-echo "PAR_PATH: $PAR_PATH"
-echo "XLR_PATH: $XLR_PATH"
-echo "SEG_PATH: $SEG_PATH"
-echo "MAP_PATH: $MAP_PATH"
-echo "GAP_PATH: $GAP_PATH"
-echo "CENTRO_PATH: $CENTRO_PATH"
-echo "CHROM_PATH: $CHROM_PATH"
-echo "REF_PATH: $REF_PATH"
-'
-
-# Debugging inside the container script
 # Check if REF37 is empty before joining
 # REF_STRING is used for VCF creation
 if [ -n "$REF37" ]; then
@@ -81,8 +65,8 @@ fi
 docker run -it --userns=host --privileged \
                -e EXP_ID="$EXP_ID" \
                -v "$MIXER_RESOURCES_DIR":"$MIXER_RESOURCES_CONTAINER" \
-               -v "$MIXER_SUPPORT_DIR":"$MIXER_SUPPORT_CONTAINER" \
-               -v "$EXCAVATOR2_SUPPORT_DIR":"$EXCAVATOR2_SUPPORT_CONTAINER" \
+               -v "$MIXER_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
+               -v "$EXCAVATOR2_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
                -v "$FASTA_DIR":"$FASTA_DIR_CONTAINER" \
                -v "$BAM_DIR":"$BAM_DIR_CONTAINER" \
                -v "$SING_DIR":"$SING_DIR_CONTAINER" \

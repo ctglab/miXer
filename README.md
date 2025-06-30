@@ -50,11 +50,11 @@ miXer requires **all** sample `.bam` file to be located in the same folder.
 
 ## miXer Configuration - Resources folder
 miXer expects the following files grouped inside a single folder:
-- **Configuration file**: `.tsv` file file containing details on the samples which will be analyzed.
+- **Sample list file**: `.tsv` file file containing details on the samples which will be analyzed.
 - **Target file**: `.bed` file containing all target regions captured by the enrichment kit used for the cohort in analysis.
 - **OPTIONAL: RData file of pre-made Control Sample Groups**: `.RData` file containing the averaged read counts of control samples previously obtained through EXCAVATOR2.
 
-### Configuration file structure
+### Sample list file structure
 
 | ID     | bamName          | Gender | sampleType |
 |--------|------------------|--------|------------|
@@ -68,18 +68,18 @@ Where:
 - **sampleType**: Either **T** (Test) or **C** (Control); CNV calling will be done for **T** samples using **C** samples as controls.
 
 ## miXer Configuration - Support files
-Two separate sets of support files are required: one for EXCAVATOR2 and one for miXer. Each set must be organized into its own dedicated folder:
+Two sets of support files are required: one for EXCAVATOR2 and one for miXer.
 
-#### EXCAVATOR2 support
-Four files are required:
+#### EXCAVATOR2-specific support
 - **CentromerePosition_hgVersion.txt**: Containing the coordinates of the centromeres for the considered human genome assembly.
 - **ChromosomeCoordinate_hgVersion.txt**: Containing the coordinates of chromosomes.
 - **Gap_hgVersion.txt**: Containing gap annotations.
 - **mappability_track_hgVersion.bw**: Required in order to annotate each target region with their average mappability.
 
-#### miXer support
-One file is required:
+#### miXer-specific support
 - **GRC_pseudoautosomal_regions_hgVersion.gz**: Annotation track contraining PAR regions
+
+miXer expects the following files to be located together in a single directory.
 
 ## miXer Configuration - EXCAVATOR2 Singularity file
 At the moment, to run miXer, the `.sif` file of EXCAVATOR2 is required. Instructions on how to obtain it are to be found [in EXCAVATOR2 repository.](https://github.com/ctglab/excavator2)
@@ -91,12 +91,11 @@ To run miXer, a JSON file must be compiled as such:<br>
 | `exp_id`                  | string: `experiment_name`                                    | Experiment identifier, used as name for output folder.                                        |
 | `threads`                 | int: `12`                                                    | Number of threads to use for parallel execution.                                              |
 | `mixer_resources_dir`     | string: `/path/to/resources_folder`                          | Path to miXer resource folder, containing the configuration and sequencing target files.      |
-| `mixer_support_dir`       | string: `/path/to/miXer_support_folder`                      | Directory with miXer support files (e.g., PAR file)                                           |
-| `excavator2_support_dir`  | string: `/path/to/excavator2_support/`                       | Directory with EXCAVATOR2 support files (centromeres, gaps, etc.)                            |
+| `support_dir`  | string: `/path/to/support_directory/`                       | Directory with EXCAVATOR2 and miXer support files (PAR regions, centromeres, gaps, etc.)                            |
 | `fasta_dir`               | string: `/path/to/fasta_reference`                           | Directory containing the reference genome FASTA file.                                         |
 | `bam_dir`                 | string: `/path/to/bam_files`                                 | Directory containing BAM input files. All .bam files specified in the configuration must be here. |
 | `sing_dir`                | string: `/path/to/excavator2_singularity_image`              | Path to EXCAVATOR2 `.sif` image used in miXer preprocessing.                                 |
-| `config`                  | string: `ConfigFile.tsv`                          | Name of the configuration file used by miXer.                                                 |
+| `sample_list`                  | string: `sampleList.tsv`                          | Name of the configuration file used by miXer.                                                 |
 | `target`                  | string: `TargetFile.bed`                           | Name of target BED file.                                                                      |
 | `par`                     | string: `GRC_pseudoautosomal_regions_hgVersion.gz`                | Name of annotation file containing Pseudoautosomal Regions.                                   |
 | `map`                     | string: `mappability_track_hgVersion.bw`                                       | Name of Mappability track in BigWig format.                                                   |
@@ -137,8 +136,8 @@ miXer will output three folders, which  will be stored in the previously specifi
 
 - **exca2_output_experiment_name**: Folder containing the full output of EXCAVATOR2 tool:
   - If control samples are provided, EXCAVATOR2 CNV calls will also be available. Otherwise, if miXer is run using a pre-made control sample RData, only the output of the DataPrepare module will be present.
-- **mixer_vcfs**: Folder containing VCFs (v.4.4) for all samples specified as `T` in the `ConfigFile.tsv`
-- **mixer_windows**: Folder containing, for all samples specified as `T` in the `ConfigFile.tsv`:
+- **mixer_vcfs**: Folder containing VCFs (v.4.4) for all samples specified as `T` in the `sampleList.tsv`
+- **mixer_windows**: Folder containing, for all samples specified as `T` in the `sampleList.tsv`:
   - **SVM_guess_ploidy_results.txt**: File containing miXer's estimated ploidy status of the X-chromosome for each sample
   - **sampleID_TARGET folders**: One folder for each sample, containing:
     - **sampleID_TARGET_hmm_bw20_PASS_ONLY_windows.bed**: PASS quality CNV windows only (i.e. CNVs with a confidence score higher than 0.9)
