@@ -16,7 +16,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
 fi
 
 # Load variables from JSON config (omit mixer_apptainer_sif)
-eval "$(jq -r '@sh "EXP_ID=\(.exp_id) CONFIG=\(.config) TARGET=\(.target) REF=\(.ref) REF37=\(.ref37) THREADS=\(.threads) MAP=\(.map) GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata) MAIN_OUTDIR_HOST=\(.main_outdir_host) MIXER_RESOURCES_DIR=\(.mixer_resources_dir) SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir) BAM_DIR=\(.bam_dir) SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh " EXP_ID=\(.exp_id) CONFIG=\(.config)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap)  CENTRO=\(.centro)  CHROM=\(.chrom)  PAR=\(.par)  PREMADE_CONTROL_RDATA=\(.premade_control_rdata)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
 
 # Create per-run temp workspace
 TEMP_DIR="./temp_${EXP_ID}"
@@ -85,8 +85,7 @@ apptainer exec \
   --bind "$TEMP_DIR/mixer_vcfs":"/app/mixer_vcfs" \
   --bind "$TEMP_DIR/mixer_outputs/${EXP_ID}":"/app/mixer_outputs/${EXP_ID}" \
   --bind "$MIXER_RESOURCES_DIR":"$MIXER_RESOURCES_CONTAINER" \
-  --bind "$MIXER_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
-  --bind "$EXCAVATOR2_SUPPORT_DIR":"$SUPPORT_CONTAINER" \
+  --bind "$SUPPORT_DIR":"$SUPPORT_CONTAINER" \
   --bind "$FASTA_DIR":"$FASTA_DIR_CONTAINER" \
   --bind "$BAM_DIR":"$BAM_DIR_CONTAINER" \
   --bind "$SING_DIR":"$SING_DIR_CONTAINER" \
