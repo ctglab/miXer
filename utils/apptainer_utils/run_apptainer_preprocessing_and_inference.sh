@@ -16,7 +16,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
 fi
 
 # Load variables from JSON config (omit mixer_apptainer_sif)
-eval "$(jq -r '@sh " EXP_ID=\(.exp_id) CONFIG=\(.config)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap)  CENTRO=\(.centro)  CHROM=\(.chrom)  PAR=\(.par)  PREMADE_CONTROL_RDATA=\(.premade_control_rdata)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh " EXP_ID=\(.exp_id) SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap)  CENTRO=\(.centro)  CHROM=\(.chrom)  PAR=\(.par)  PREMADE_CONTROL_RDATA=\(.premade_control_rdata)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
 
 # Create per-run temp workspace
 TEMP_DIR="./temp_${EXP_ID}"
@@ -39,7 +39,7 @@ SING_DIR_CONTAINER="/app/singfiles/"
 MAIN_OUTPUT_DIR_CONTAINER="/app/mixer_outputs/"
 
 # File paths inside the container
-MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${CONFIG}"
+MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${SAMPLELIST}"
 MIXER_RESOURCES_TARGET="${MIXER_RESOURCES_CONTAINER}${TARGET}"
 PAR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$PAR")"
 MAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$MAP")"

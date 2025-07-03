@@ -21,7 +21,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  CONFIG=\(.config)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata)"' "$CONFIG_PATH")"
 
 MIXER_RESOURCES_CONTAINER="/app/mixer_resources/"
 SUPPORT_CONTAINER="/app/support/"
@@ -32,7 +32,7 @@ MAIN_OUTPUT_DIR_CONTAINER="/app/mixer_outputs/"
 
 #DEBUG_OUT="/docker_debug_out"
 # Creating in-image paths for files
-MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${CONFIG}"
+MIXER_RESOURCES_CONFIG="${MIXER_RESOURCES_CONTAINER}${SAMPLELIST}"
 MIXER_RESOURCES_TARGET="${MIXER_RESOURCES_CONTAINER}${TARGET}"
 PAR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$PAR")"
 #XLR_PATH="${SUPPORT_CONTAINER%/}/$(basename "$XLR")"
