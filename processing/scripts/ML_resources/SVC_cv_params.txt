@@ -1,7 +1,0 @@
-{
-	"C" : [0.01,0.1,1,5, 10,15, 20],
-	"gamma" : [0.001, 0.01, 0.1, 1, "auto", "scale"],
-	"degree": [2,3],
-	"kernel": ["rbf", "poly", "linear"],
-	"cache_size" : [8000]
-}
