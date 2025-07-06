@@ -25,14 +25,8 @@ python -u ${PREPR_SCRIPT_DIR}/check_config.py -cf ${CONFIG} -o ${OUTDIR_EXCA}_${
 ###1. run EXCAVATOR2:
 echo "Running EXCAVATOR2"
 conda activate ${CONDA_HOME}/envs/mixersing
-# Check for REF37 if it is empty 
 
-if [ ! -z "$REF37" ]; then
-	echo "REF37 is not empty, is it correct?: $REF37"
-	python -u ${PREPR_SCRIPT_DIR}/run_excavator2singularity.py -o ${OUTDIR_EXCA}_${EXP_ID} -b ${BAM_DIR_CONTAINER} -e ${EXP_ID} -t ${TARGET} -cf ${OUTDIR_EXCA}_${EXP_ID}/${EXCA2CONFIG}_forExca2 -r37 ${REF37} -m ${MAP} -g ${GAP} -cm ${CENTRO} -ch ${CHROM} -th ${THREADS} -ed ${SING_DIR_CONTAINER}
-else
-	python -u ${PREPR_SCRIPT_DIR}/run_excavator2singularity.py -o ${OUTDIR_EXCA}_${EXP_ID} -b ${BAM_DIR_CONTAINER} -e ${EXP_ID} -t ${TARGET} -cf ${OUTDIR_EXCA}_${EXP_ID}/${EXCA2CONFIG}_forExca2 -r ${REF} -m ${MAP} -g ${GAP} -cm ${CENTRO} -ch ${CHROM} -th ${THREADS} -ed ${SING_DIR_CONTAINER}
-fi
+python -u ${PREPR_SCRIPT_DIR}/run_excavator2singularity.py -o ${OUTDIR_EXCA}_${EXP_ID} -b ${BAM_DIR_CONTAINER} -e ${EXP_ID} -t ${TARGET} -cf ${OUTDIR_EXCA}_${EXP_ID}/${EXCA2CONFIG}_forExca2 -r ${REF} -m ${MAP} -g ${GAP} -cm ${CENTRO} -ch ${CHROM} -th ${THREADS} -ed ${SING_DIR_CONTAINER}
 
 ###2. create miXer datasets:
 echo "Creating miXer datasets"

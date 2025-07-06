@@ -24,5 +24,4 @@ COPY . /app
 
 # Copy the entry point scripts into the container
 RUN chmod +x /app/entrypoints/*.sh && \
-  chmod +x /app/main_entrypoint.sh && \
   mkdir -p /app/tmp/

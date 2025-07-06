@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
     parser.add_argument('-cf', '--config', metavar="", help="miXer config file with XXXY samples")
     parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", default=False)
-    parser.add_argument('-r37','--ref37', metavar="", help="OPTIONAL: only with b37 build, add hg19 reference to run EXCAVATOR2", default=False)
+    #parser.add_argument('-r37','--ref37', metavar="", help="OPTIONAL: only with b37 build, add hg19 reference to run EXCAVATOR2", default=False)
     parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
     parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
     parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
@@ -127,10 +127,10 @@ if __name__ == "__main__":
 
     #### create excavator2 yaml files:
     ##TargetPerla:
-    if arguments.ref37:
-       target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref37,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
-    else:
-       target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
+    #if arguments.ref37:
+    #   target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref37,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
+    #else:
+    target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
     target_yaml = os.path.join(tmp_folder,arguments.exp_name + '_target.yaml')
     with open(target_yaml, 'w') as file:
          documents = yaml.dump(target_dict, file, sort_keys=False)

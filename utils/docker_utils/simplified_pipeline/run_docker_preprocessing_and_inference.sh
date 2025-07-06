@@ -21,7 +21,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata)"' "$CONFIG_PATH")"
 
 MIXER_RESOURCES_CONTAINER="/app/mixer_resources/"
 SUPPORT_CONTAINER="/app/support/"
@@ -42,16 +42,7 @@ GAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$GAP")"
 CENTRO_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
 CHROM_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
 REF_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF")"
-
-# Check if REF37 is empty before joining
-# REF_STRING is used for VCF creation
-if [ -n "$REF37" ]; then
-  REF37_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF37")"
-  REF_STRING="$REF37"
-else
-  REF37_PATH=""
-  REF_STRING="$REF"
-fi
+REF_STRING="$REF"
 
 # Check if PREMADE_CONTROL_RDATA is empty before joining
 if [ -n "$PREMADE_CONTROL_RDATA" ]; then
@@ -76,7 +67,6 @@ docker run -it --userns=host --privileged \
                -e "TARGET=$MIXER_RESOURCES_TARGET" \
                -e "REF=$REF_PATH" \
                -e "REF_STRING=$REF_STRING" \
-               -e "REF37=$REF37_PATH" \
                -e "THREADS=$THREADS" \
                -e "MAP=$MAP_PATH" \
                -e "GAP=$GAP_PATH" \

@@ -197,8 +197,6 @@ if __name__ == "__main__":
     target_df[0] = target_df[0].astype(str)
     checkb37 = target_df[target_df[0].str.startswith(('chr'))]
     caseNtrain_df = pd.read_table(arguments.config, sep="\t")
-
-    #do_mnorm = arguments.nrc_median_normalization
     
     caseNtrain_df.sampleType = caseNtrain_df.sampleType.str.replace(' ', '').str.lower()
     caseNtrain_df.ID = caseNtrain_df.ID.astype(str)
@@ -325,14 +323,7 @@ if __name__ == "__main__":
             nrc_rdata2bed = extract_nrc(file)
             
             full_annot_target, nrc_median = make_dataset(name,nrc_rdata2bed,nrc_pool_females,final_target_df)
-            
-            # if do_mnorm:
-            #     full_annot_target, nrc_median = make_dataset(name,nrc_rdata2bed,nrc_pool_females,cvg_df,final_target_df)
-            # else:
-            #     full_annot_target, nrc_median = make_dataset(name,nrc_rdata2bed,nrc_pool_females,cvg_df,final_target_df, is_mf = True, nrc_median=0)
-                
-            # print(cvg_df.loc[cvg_df["id"] == name])
-            # print(nrc_median)
+
             ##samples only required for training
             if name in train_only.ID.astype(str).to_list():
                 df_xlr, df_nosegdup, df_with_segdup = create_training_datasets(full_annot_target,target_df,par_bt,xlr_bt,segdup_bt) 
@@ -346,9 +337,7 @@ if __name__ == "__main__":
                 addclass(df_nosegdup,gender,name).to_csv(noseg_setOut, mode='a', sep='\t', index=False, header=False, compression="gzip")
             ##samples only required for calling   
             elif name in call_only.ID.astype(str).to_list():
-                # if do_mnorm:
-                #     full_annot_target['nrc_poolNorm'] = full_annot_target['nrc_poolNorm'] - nrc_median
-                    
+
                 print('Saving use-case processed sample {}\n'.format(name))
                 print("Saving sample to {}\n".format(dataset_test_dir))
                 target_setOut= os.path.join(dataset_test_dir,name+'_TARGET.txt.gz') 
@@ -369,9 +358,6 @@ if __name__ == "__main__":
                 addclass(df_with_segdup,gender,name).to_csv(seg_setOut, mode='a', sep='\t', index=False, header=False, compression="gzip")
                 addclass(df_nosegdup,gender,name).to_csv(noseg_setOut, mode='a', sep='\t', index=False, header=False, compression="gzip")
                 #Usecase files
-                #possible normalization for training data
-                # if do_mnorm:
-                #     full_annot_target['nrc_poolNorm'] = full_annot_target['nrc_poolNorm'] - nrc_median
                 target_setOut= os.path.join(dataset_test_dir,name+'_TARGET.txt.gz') 
                 outFtarget = pd.DataFrame(columns = ['Chr','Start','End','GC_content','Mappability','Length','NRC_poolNorm', 'ID'])
                 outFtarget.to_csv(target_setOut, mode='w', sep='\t', index=False)
@@ -388,15 +374,6 @@ if __name__ == "__main__":
             f_samp = mfs.loc[mfs["ID"] == name]["simF_ID"].values[0]
             nrc_rdata2bed = extract_nrc(file)
             full_annot_target, nrc_median, df_ddup = make_dataset(name,nrc_rdata2bed,nrc_pool_females,final_target_df, is_mf = True)
-            
-            # if do_mnorm:
-            #     #get female nrc median                
-            #     f_nrc_median = nrc_median_F_df.loc[nrc_median_F_df["F_ID"] == f_samp]["AutNRC_poolNorm_median"].values[0]
-            #     full_annot_target['nrc_poolNorm'] = full_annot_target['nrc_poolNorm'] - nrc_median 
-                
-            # print(cvg_df.loc[cvg_df["id"] == name])
-            # print(f_nrc_median)
-            # print(full_annot_target["nrc_poolNorm"].median())
             
             df_xlr, df_nosegdup, df_with_segdup = create_training_datasets(full_annot_target,target_df,par_bt,xlr_bt,segdup_bt)
             

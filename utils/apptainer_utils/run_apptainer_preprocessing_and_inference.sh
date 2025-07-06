@@ -16,7 +16,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
 fi
 
 # Load variables from JSON config (omit mixer_apptainer_sif)
-eval "$(jq -r '@sh " EXP_ID=\(.exp_id) SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  REF37=\(.ref37)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap)  CENTRO=\(.centro)  CHROM=\(.chrom)  PAR=\(.par)  PREMADE_CONTROL_RDATA=\(.premade_control_rdata)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh " EXP_ID=\(.exp_id) SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap)  CENTRO=\(.centro)  CHROM=\(.chrom)  PAR=\(.par)  PREMADE_CONTROL_RDATA=\(.premade_control_rdata)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)"' "$CONFIG_PATH")"
 
 # Create per-run temp workspace
 TEMP_DIR="./temp_${EXP_ID}"
@@ -47,15 +47,7 @@ GAP_PATH="${SUPPORT_CONTAINER%/}/$(basename "$GAP")"
 CENTRO_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CENTRO")"
 CHROM_PATH="${SUPPORT_CONTAINER%/}/$(basename "$CHROM")"
 REF_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF")"
-
-# Handle REF37 override
-if [ -n "$REF37" ]; then
-  REF37_PATH="${FASTA_DIR_CONTAINER%/}/$(basename "$REF37")"
-  REF_STRING="$REF37"
-else
-  REF37_PATH=""
-  REF_STRING="$REF"
-fi
+REF_STRING="$REF"
 
 # Handle PREMADE_CONTROL_RDATA
 if [ -n "$PREMADE_CONTROL_RDATA" ]; then
@@ -94,7 +86,6 @@ apptainer exec \
   --env CONFIG="$MIXER_RESOURCES_CONFIG" \
   --env TARGET="$MIXER_RESOURCES_TARGET" \
   --env REF="$REF_PATH" \
-  --env REF37="$REF37_PATH" \
   --env REF_STRING="$REF_STRING" \
   --env THREADS="$THREADS" \
   --env MAP="$MAP_PATH" \
