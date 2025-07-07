@@ -74,7 +74,7 @@ docker run -it --userns=host --privileged \
                -e "CHROM=$CHROM_PATH" \
                -e "PAR=$PAR_PATH" \
                -e "MAIN_OUTPUT_DIR_CONTAINER=$MAIN_OUTPUT_DIR_CONTAINER" \
-               mixer_docker:latest /bin/bash -c "mkdir -p /app/$MAIN_OUTPUT_DIR_CONTAINER && source /app/entrypoints/mixer_preprocessing_and_inference_simplified.sh"
+               $IMAGE /bin/bash -c "mkdir -p /app/$MAIN_OUTPUT_DIR_CONTAINER && source /app/entrypoints/mixer_preprocessing_and_inference_simplified.sh"
 
 #Debug copies
 #docker cp $(docker ps -q -n=1):/app/exca2Out "$DEBUG_OUT"
