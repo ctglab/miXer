@@ -18,26 +18,23 @@ def phred_scale(p_error):
     return None
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='Convert BED file to VCF format.')
-parser.add_argument('-bd','--bed_dir', type=str, required=True, help='Directory containing BED files from HMM output')
+parser = argparse.ArgumentParser(description='Convert TSV file to VCF format.')
+parser.add_argument('-td','--tsv_dir', type=str, required=True, help='Directory containing TSV files from HMM output')
 parser.add_argument('-od', '--output_dir', type=str, help='Output directory for VCF files', default = None)
 parser.add_argument('-ref', '--reference', type=str, default='unspecified', help='Reference genome version (default: "unspecified")')
-parser.add_argument('-hc', '--hc_only', action='store_true', help ='Boolean flag to use only pre-filtered HC>=0.9 BED windows file for VCF creation. False if not specified.')
+parser.add_argument('-hc', '--hc_only', action='store_true', help ='Boolean flag to use only pre-filtered HC>=0.9 TSV windows file for VCF creation. False if not specified.')
 args = parser.parse_args()
 
-#Read the .bed file and parse the data
-#bed_dir = '/home/elia/Scrivania/test_docker_inference_only_output/HMM/hmm_output'#'/NA12878_wt_TARGET/NA12878_wt_TARGET_hmm_application_results/hmm_windows_output'
-#vcf_dir = '/home/elia/Scrivania/test_docker_inference_only_output/VCF/'
 # Determine VCF output directory
 
 if args.output_dir is None:
-    bed_parent_dir = os.path.dirname(os.path.dirname(args.bed_dir)) #TODO fix it?
+    bed_parent_dir = os.path.dirname(os.path.dirname(args.tsv_dir)) #TODO fix it?
     vcf_dir = os.path.join(bed_parent_dir, "VCF")
 else:
     vcf_dir = args.output_dir
 
-# Get all subfolders in the bed_dir and get sample names
-for _, dirs, _ in os.walk(args.bed_dir):
+# Get all subfolders in the tsv_dir and get sample names
+for _, dirs, _ in os.walk(args.tsv_dir):
     # sanitize directory name to remove _TARGET
     samples = [x.replace("_TARGET", "") for x in dirs]
     break
@@ -45,28 +42,28 @@ for _, dirs, _ in os.walk(args.bed_dir):
 for i in range(len(dirs)):
     #Get current sample id
     sample = samples[i]
-    #Get current sample's BED file dir
-    curr_sample_dir = os.path.join(args.bed_dir, dirs[i], dirs[i] + "_hmm_application_results", "hmm_windows_output")
+    #Get current sample's TSV file dir
+    curr_sample_dir = os.path.join(args.tsv_dir, dirs[i])
     #Define current sample's VCF output dir
     curr_sample_vcf_output_dir = os.path.join(vcf_dir, dirs[i])
     
     #Check if output dir exists, if not, create it
     if not os.path.isdir(curr_sample_vcf_output_dir):
         os.makedirs(curr_sample_vcf_output_dir)
-    #Get correct BED file
+    #Get correct TSV file
     #Get all files in directory
     file_list = os.listdir(curr_sample_dir)
     
     if args.hc_only:
         #Use file with only high confidence windows
-        bed_file = [filename for filename in file_list if 'HC09' in filename][0]
+        bed_file = [filename for filename in file_list if 'PASS' in filename][0]
         
     else:
         #Use file with all windows
-        bed_file = [filename for filename in file_list if 'HC0' not in filename][0]
+        bed_file = [filename for filename in file_list if 'PASS' not in filename][0]
     
     
-    # Read the BED file
+    # Read the TSV file
     bed_entries = []
     with open(os.path.join(curr_sample_dir, bed_file), 'r') as f:
         for line_num, line in enumerate(f):
@@ -97,8 +94,8 @@ for i in range(len(dirs)):
         '##ALT=<ID=DEL,Description="Deletion">',
         '##ALT=<ID=DUP,Description="Duplication">',
         '##FILTER=<ID=PASS,Description="High-quality calls with CS higher than 0.9">',
-        '##FILTER=<ID=MediumQual,Description="Calls with CS between 0.8 and 0.9">',
-        '##FILTER=<ID=LowQual,Description="Calls with CS lower than 0.8">',
+        '##FILTER=<ID=MediumQual,Description="Calls with CS between 0.7 and 0.9">',
+        '##FILTER=<ID=LowQual,Description="Calls with CS lower than 0.7">',
         '##QUAL=<ID=PQS,Number=1,Type=Float,Description="Phred-scaled quality score of the probability of a wrong CNV type assignment">',
         '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant described in this record">',
         '##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">',

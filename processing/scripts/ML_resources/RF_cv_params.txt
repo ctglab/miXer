@@ -1,8 +1,0 @@
-{
-	"criterion": ["entropy", "gini"], 
-	"n_estimators": [10,50,100],
-        "max_depth": [3,5,10],
-	"max_features": ["sqrt", 3],
-        "min_samples_leaf": [5,10,20], 
-	"min_samples_split": [5,10,20]
-}

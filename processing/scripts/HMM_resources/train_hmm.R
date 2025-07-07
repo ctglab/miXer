@@ -27,7 +27,7 @@ train_hmm <- function(y, base_hmm, hmm_bw_max_iter, bw_delta, train_chrom, predi
   train_observations <- as.character(train[[predictions_column_name]])
   #use baum-welch to estimate transition and emission probabilities given the observations of the hidden state
   #trace(baumWelch, edit="nano")
-  bw = baumWelch(base_hmm,train_observations, maxIterations =  hmm_bw_max_iter, delta = bw_delta, pseudoCount =0)
+  bw = baumWelch(base_hmm,train_observations, maxIterations =  hmm_bw_max_iter, delta = bw_delta, pseudoCount = 1e-6)
   # print(bw$hmm)
   return(bw)
 }

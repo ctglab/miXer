@@ -18,8 +18,8 @@ from joblib import load
 import warnings
 
 from ML_resources.str_to_bool import str_to_bool
-from ML_resources.get_scaler_name import get_scaler_name
-from ML_resources.get_trained_model_and_scaler import get_trained_model_and_scaler
+#from ML_resources.get_scaler_name import get_scaler_name
+#from ML_resources.get_trained_model_and_scaler import get_trained_model_and_scaler
 from ML_resources.split import split
 from ML_resources.parallel_predictions import parallel_predictions
 

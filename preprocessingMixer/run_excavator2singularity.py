@@ -64,15 +64,17 @@ def run_EXCA2(tyaml,pyaml,ayaml,b,Tpath,sd,ecpu, no_controls):
     pyaml_name = os.path.basename(pyaml)
     ayaml_name = os.path.basename(ayaml)
     #Client.load(sd+"/"+"excavator2.sif")
-    Client.load(os.path.join(sd, "excavator2.sif"))
+    sif_path= os.path.join(sd, "excavator2.sif")
+    Client.load(sif_path)
     print("Running EXCAVATOR2 TargetPerla")
-    Client.execute(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'], bind=b, quiet=False)
+    #Client.execute(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'], bind=b, quiet=False)
+    Client.run(sif_path,['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'],bind=b, quiet=False)
     print("Running EXCAVATOR2 DataPrepare")
-    Client.execute(['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath], bind=b, quiet=False)
+    Client.run(sif_path, ['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath], bind=b, quiet=False)
     #NOTE that mixer can use a control.RData, which can be provided
     if not no_controls:
         print("Running EXCAVATOR2 DataAnalysis")
-        Client.execute(['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'], bind=b, quiet=False)
+        Client.run(sif_path, ['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'], bind=b, quiet=False)
     else:
         print("No control samples provided, skipping EXCAVATOR2 DataAnalysis")
     print("EXCAVATOR2 Analysis completed")
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
     parser.add_argument('-cf', '--config', metavar="", help="miXer config file with XXXY samples")
     parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", default=False)
-    parser.add_argument('-r37','--ref37', metavar="", help="OPTIONAL: only with b37 build, add hg19 reference to run EXCAVATOR2", default=False)
+    #parser.add_argument('-r37','--ref37', metavar="", help="OPTIONAL: only with b37 build, add hg19 reference to run EXCAVATOR2", default=False)
     parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
     parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
     parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
@@ -111,25 +113,26 @@ if __name__ == "__main__":
        
     ####inputs:
     samples_df = pd.read_table(arguments.config, sep="\t")
-    samples_df.analysis = samples_df.analysis.str.replace(' ', '').str.lower()
+    samples_df.sampleType = samples_df.sampleType.str.replace(' ', '').str.lower()
     ##select from config files female controls
-    samples_ctrl = samples_df[(samples_df['analysis'].str.contains(r'ctrl'))].reset_index(drop=True)
+    samples_ctrl = samples_df[samples_df['sampleType'] == 'c'].reset_index(drop=True)
     no_controls = False
     if samples_ctrl.shape[0] == 0:
         no_controls = True
-    samples_case = samples_df[(samples_df['analysis'].str.contains(r'case'))].reset_index(drop=True) 
+
+    samples_case = samples_df[samples_df['sampleType'] == 't'].reset_index(drop=True)
     if samples_case.empty:
-       samples_case = samples_df[(samples_df['analysis'].str.contains(r'train'))].reset_index(drop=True)[:1]
+        samples_case = samples_df[samples_df['sampleType'] == 'train'].reset_index(drop=True)[:1]
     ##script dir containing sif file
     #script_dir = os.path.realpath(os.path.dirname(__file__))
 
 
     #### create excavator2 yaml files:
     ##TargetPerla:
-    if arguments.ref37:
-       target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref37,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
-    else:
-       target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
+    #if arguments.ref37:
+    #   target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref37,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
+    #else:
+    target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
     target_yaml = os.path.join(tmp_folder,arguments.exp_name + '_target.yaml')
     with open(target_yaml, 'w') as file:
          documents = yaml.dump(target_dict, file, sort_keys=False)
