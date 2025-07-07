@@ -14,6 +14,9 @@ Clone the repository:<br>
 To run miXer, a Docker image must be built using the cloned repository. Assuming to be in the recently cloned "miXer" folder, run the following:<br>
 `docker build -t mixer_docker:latest .`
 
+Otherwise, just pull it from DockerHub:<br>
+`docker pull ctglabcnr/mixer`
+
 ### Building the Apptainer image
 
 Using the previously built image:<br>
@@ -33,7 +36,9 @@ Using the previously built image:<br>
 
 - **If control samples are unavailable**:  
   miXer can exploit the control sample `.RData` generated when building the X-chromosome training set  
-  of the SVM CN classifier. Such files are available in (...)  
+  of the SVM CN classifier. Such files are available on [Zenodo](https://zenodo.org/records/15829608) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15829608.svg)](https://doi.org/10.5281/zenodo.15829608)
+
+ 
   **WARNING**: This will only be feasible if the exome sequencing kit is **exactly the same** as one of those reported below (unpredictable behaviour otherwise):
 
     | Kit name               | Capture Technology                                                     | Bait Size (Mb) | Ref. Build | Platform                  | Read Length   |
@@ -84,7 +89,16 @@ The BigWig files encode genome-wide mappability for hg19 and hg38 assemblies and
 miXer expects the following files to be located together in a single directory.
 
 ## miXer Configuration - EXCAVATOR2 Singularity file
-At the moment, to run miXer, the `.sif` file of EXCAVATOR2 is required. Instructions on how to obtain it are to be found [in EXCAVATOR2 repository.](https://github.com/ctglab/excavator2)
+To run miXer, you must have the EXCAVATOR2 Apptainer image named exactly `excavator2.sif`. You can obtain this by pulling the official Docker image and converting it:
+
+1. **Download the Docker image**  
+
+    docker pull ctglab/excavator2:latest
+2. **Build the Apptainer image** 
+
+    apptainer build excavator2.sif docker-daemon://ctglab/excavator2:latest
+
+EXCAVATOR2 source code is available on [GitHub](https://github.com/ctglab/excavator2)
 
 # Running miXer: JSON Configuration file
 To run miXer, a JSON file must be compiled as such:<br>
@@ -96,7 +110,7 @@ To run miXer, a JSON file must be compiled as such:<br>
 | `support_dir`  | string: `/path/to/support_directory/`                       | Directory with EXCAVATOR2 and miXer support files (PAR regions, centromeres, gaps, etc.)                            |
 | `fasta_dir`               | string: `/path/to/fasta_reference`                           | Directory containing the reference genome FASTA file.                                         |
 | `bam_dir`                 | string: `/path/to/bam_files`                                 | Directory containing BAM input files. All .bam files specified in the configuration must be here. |
-| `sing_dir`                | string: `/path/to/excavator2_singularity_image`              | Path to EXCAVATOR2 `.sif` image used in miXer preprocessing.                                 |
+| `sing_dir`                | string: `/path/to/excavator2_singularity_image`              | Path to folder containing EXCAVATOR2 `.sif` image used in miXer preprocessing.                                 |
 | `sample_list`                  | string: `sampleList.tsv`                          | Name of the configuration file used by miXer.                                                 |
 | `target`                  | string: `TargetFile.bed`                           | Name of target BED file.                                                                      |
 | `par`                     | string: `GRC_pseudoautosomal_regions_hgVersion.gz`                | Name of annotation file containing Pseudoautosomal Regions.                                   |
@@ -106,7 +120,7 @@ To run miXer, a JSON file must be compiled as such:<br>
 | `chrom`                   | string: `ChromosomeCoordinate_hgVersion.txt`                      | Name of file containing chromosome coordinates.                                               |
 | `ref`                     | string: `reference_genome.fasta`                                    | Name of reference genome file in FASTA format.                                                |
 | `ref37`                   | string: *(empty)*                                            | TODO Used only for `b37`  if `.bam` file were aligned to GRCh37 reference build.                                                                                         |
-| `premade_control_rdata`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
+| `premade_controls`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
 | `main_outdir_host`        | string: `/path/to/output_directory/`         | Path to output directory, will be created if not existing.                                   |
 
 A JSON configuration file template can be found in `utils/` folder.

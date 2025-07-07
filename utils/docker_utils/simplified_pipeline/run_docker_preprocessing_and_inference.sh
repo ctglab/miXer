@@ -21,7 +21,7 @@ if [ ! -f "$CONFIG_PATH" ]; then
     exit 1
 fi
 
-eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_control_rdata)"' "$CONFIG_PATH")"
+eval "$(jq -r '@sh "  EXP_ID=\(.exp_id)  MIXER_RESOURCES_DIR=\(.mixer_resources_dir)  MIXER_SUPPORT_DIR=\(.support_dir)  EXCAVATOR2_SUPPORT_DIR=\(.support_dir) FASTA_DIR=\(.fasta_dir)  BAM_DIR=\(.bam_dir)  SING_DIR=\(.sing_dir)  MAIN_OUTDIR_HOST=\(.main_outdir_host)  SAMPLELIST=\(.sample_list)  TARGET=\(.target)  REF=\(.ref)  THREADS=\(.threads)  MAP=\(.map)  GAP=\(.gap) CENTRO=\(.centro) CHROM=\(.chrom) PAR=\(.par) PREMADE_CONTROL_RDATA=\(.premade_controls)"' "$CONFIG_PATH")"
 
 MIXER_RESOURCES_CONTAINER="/app/mixer_resources/"
 SUPPORT_CONTAINER="/app/support/"

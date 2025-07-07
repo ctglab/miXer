@@ -64,15 +64,17 @@ def run_EXCA2(tyaml,pyaml,ayaml,b,Tpath,sd,ecpu, no_controls):
     pyaml_name = os.path.basename(pyaml)
     ayaml_name = os.path.basename(ayaml)
     #Client.load(sd+"/"+"excavator2.sif")
-    Client.load(os.path.join(sd, "excavator2.sif"))
+    sif_path= os.path.join(sd, "excavator2.sif")
+    Client.load(sif_path)
     print("Running EXCAVATOR2 TargetPerla")
-    Client.execute(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'], bind=b, quiet=False)
+    #Client.execute(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'], bind=b, quiet=False)
+    Client.run(sif_path,['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'],bind=b, quiet=False)
     print("Running EXCAVATOR2 DataPrepare")
-    Client.execute(['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath], bind=b, quiet=False)
+    Client.run(sif_path, ['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath], bind=b, quiet=False)
     #NOTE that mixer can use a control.RData, which can be provided
     if not no_controls:
         print("Running EXCAVATOR2 DataAnalysis")
-        Client.execute(['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'], bind=b, quiet=False)
+        Client.run(sif_path, ['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'], bind=b, quiet=False)
     else:
         print("No control samples provided, skipping EXCAVATOR2 DataAnalysis")
     print("EXCAVATOR2 Analysis completed")
