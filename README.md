@@ -1,6 +1,7 @@
 # miXer:a Machine-learning method to detect genomic Imbalances exploiting X-chromosome Exome Reads
 
-miXer (with a capital X) is a lightweight machine learning tool designed to detect genomic deletions and duplications by exploiting the natural difference in X-chromosome copy number between male and female exomes. It builds on EXCAVATOR2 for data preprocessing and combines two key components: a single-exon Copy Number (CN) classifier based on Support Vector Machines (SVM), trained on data from six widely used exome sequencing kits; and a post-classification step that uses a Hidden Markov Model (HMM) for filtering and aggregation.
+miXer (with a capital X) is a lightweight machine learning tool designed to detect genomic deletions and duplications by exploiting the natural difference in X-chromosome copy number between male and female exomes. It builds on EXCAVATOR2 [GitHub](https://github.com/ctglab/excavator2) [![DOI](https://img.shields.io/badge/DOI-10.1093%2Fnar%2Fgkw695-blue.svg)](https://doi.org/10.1093/nar/gkw695)
+ for data preprocessing and combines two key components: a single-exon Copy Number (CN) classifier based on Support Vector Machines (SVM), trained on data from six widely used exome sequencing kits; and a post-classification step that uses a Hidden Markov Model (HMM) for filtering and aggregation.
 
 # Setup
 To run miXer, [Docker](https://www.docker.com/) must be available. Optionally, an [Apptainer](https://apptainer.org/) image can be used to run the tool, which can be built using the previously obtained Docker image.
@@ -48,7 +49,7 @@ Using the previously built image:<br>
     | Nextera                | Nextera Rapid Capture Exome V1.2 (Illumina Inc, San Diego, USA)        |          45.33 | GRCh37     | Illumina HiSeq X          | 150 PE        |
     | SureSelect V6          | SureSelect Human All Exon V6 (Agilent Technologies, Santa Clara, USA) |          60.46 | hg19       | Illumina NovaSeq 6000     | 150 PE        |
     | Twist                  | Human Core Exome + RefSeq Panel V1.3 (Twist Bioscience, San Francisco, USA) |      36.71 | GRCh38     | Illumina HiSeq X          | 150 PE        |
-    | SureSelect V2 (1000G)  | SureSelect Human All Exon V2 (Agilent Technologies, Santa Clara, USA) |          46.00 | GRCh38*    | Illumina HiSeq 2000/2500  | 76 or 101 PE  |
+    | SureSelect V2 (1000G)  | SureSelect Human All Exon V2 (Agilent Technologies, Santa Clara, USA) |          46.00 | GRCh38    | Illumina HiSeq 2000/2500  | 76 or 101 PE  |
 
 ## Location of Sample BAM Files to Analyze
 miXer requires **all** sample `.bam` file to be located in the same folder.
@@ -93,10 +94,10 @@ To run miXer, you must have the EXCAVATOR2 Apptainer image named exactly `excava
 
 1. **Download the Docker image**  
 
-    docker pull ctglab/excavator2:latest
+    docker pull ctglabcnr/excavator2:latest
 2. **Build the Apptainer image** 
 
-    apptainer build excavator2.sif docker-daemon://ctglab/excavator2:latest
+    apptainer build excavator2.sif docker-daemon://ctglabcnr/excavator2:latest
 
 EXCAVATOR2 source code is available on [GitHub](https://github.com/ctglab/excavator2)
 
