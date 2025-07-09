@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
-from spython.main import Client
 import os
 import pandas as pd
 import sys
 import argparse
+import subprocess
 import shutil
 import glob
 import yaml
@@ -18,23 +17,16 @@ def guess_assembly(centromere_exca):
 
 def create_target_yaml(cen,fasta,bw,chromos,gap,tar,tmp):
     assem = guess_assembly(cen)
-    fasta_dir = os.path.dirname(fasta)
     fasta_name = os.path.basename(fasta)
-    bw_dir = os.path.dirname(bw)
     bw_name = os.path.basename(bw)
-    chr_dir = os.path.dirname(chromos)
     chr_name = os.path.basename(chromos)
-    cen_dir = os.path.dirname(cen)
     cen_name = os.path.basename(cen)
-    gap_dir = os.path.dirname(gap)
     gap_name = os.path.basename(gap)    
-    target_dir = os.path.dirname(tar)
     target_name = os.path.basename(tar)
     dir_name = os.path.splitext(os.path.basename(tar))[0]
     target_dict = {'Reference' : {'Assembly': assem, 'FASTA': '/efasta/'+fasta_name, 'BigWig':'/ebw/'+bw_name, 'Chromosomes': '/echr/'+chr_name,'Centromeres':'/ecen/'+cen_name,'Gaps': '/egap/'+gap_name},'Target' : {'Name':dir_name, 'BED':'/etarget/'+target_name, 'Window': int(50000)}}
-    target_bind = fasta_dir+'/:/efasta/,'+bw_dir+'/:/ebw/,'+chr_dir+'/:/echr/,'+cen_dir+'/:/ecen/,'+gap_dir+'/:/egap/,'+target_dir+'/:/etarget/,'+tmp+'/:/output/'
     target_path = '/output/Target/'+target_dict['Reference']['Assembly']+'/'+target_dict['Target']['Name']+'/w_50000'  
-    return target_dict,target_bind,target_path
+    return target_dict, target_path
     
 def create_prepare_yaml(confile, bam_dir):    
     bam_bind = ''
@@ -59,22 +51,20 @@ def create_analysis_yaml(c,t):
         analysis_dict["T"+str(j+1)] = t.ID[j] 
     return analysis_dict 
 
-def run_EXCA2(tyaml,pyaml,ayaml,b,Tpath,sd,ecpu, no_controls):
+def run_EXCA2(tyaml: str, pyaml: str, ayaml: str, Tpath: str, ecpu: int, no_controls):
     tyaml_name = os.path.basename(tyaml)
     pyaml_name = os.path.basename(pyaml)
     ayaml_name = os.path.basename(ayaml)
     #Client.load(sd+"/"+"excavator2.sif")
-    sif_path= os.path.join(sd, "excavator2.sif")
-    Client.load(sif_path)
     print("Running EXCAVATOR2 TargetPerla")
     #Client.execute(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'], bind=b, quiet=False)
-    Client.run(sif_path,['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'],bind=b, quiet=False)
+    subprocess.run(['TargetPerla.pl','-v','-s','/output/'+tyaml_name,'-o','/output/Target'])
     print("Running EXCAVATOR2 DataPrepare")
-    Client.run(sif_path, ['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath], bind=b, quiet=False)
+    subprocess.run(['EXCAVATORDataPrepare.pl','-v','-s','/output/'+pyaml_name,'-o','/output/DataPrepare_w50k','-@',ecpu,'-t',Tpath])
     #NOTE that mixer can use a control.RData, which can be provided
     if not no_controls:
         print("Running EXCAVATOR2 DataAnalysis")
-        Client.run(sif_path, ['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'], bind=b, quiet=False)
+        subprocess.run(['EXCAVATORDataAnalysis.pl','-v','-s','/output/'+ayaml_name,'-o','/output/DataAnalysis_w50k','-@',ecpu,'-t',Tpath, '-i','/output/DataPrepare_w50k', '-e','pooling'])
     else:
         print("No control samples provided, skipping EXCAVATOR2 DataAnalysis")
     print("EXCAVATOR2 Analysis completed")
@@ -88,7 +78,6 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
     parser.add_argument('-cf', '--config', metavar="", help="miXer config file with XXXY samples")
     parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", default=False)
-    #parser.add_argument('-r37','--ref37', metavar="", help="OPTIONAL: only with b37 build, add hg19 reference to run EXCAVATOR2", default=False)
     parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
     parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
     parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
@@ -119,20 +108,10 @@ if __name__ == "__main__":
     no_controls = False
     if samples_ctrl.shape[0] == 0:
         no_controls = True
-
     samples_case = samples_df[samples_df['sampleType'] == 't'].reset_index(drop=True)
     if samples_case.empty:
         samples_case = samples_df[samples_df['sampleType'] == 'train'].reset_index(drop=True)[:1]
-    ##script dir containing sif file
-    #script_dir = os.path.realpath(os.path.dirname(__file__))
-
-
-    #### create excavator2 yaml files:
-    ##TargetPerla:
-    #if arguments.ref37:
-    #   target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref37,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
-    #else:
-    target_dict,target_bind,target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
+    target_dict, target_path = create_target_yaml(arguments.centromeres,arguments.ref,arguments.mapp,arguments.chromosomes,arguments.gap,arguments.target,tmp_folder)
     target_yaml = os.path.join(tmp_folder,arguments.exp_name + '_target.yaml')
     with open(target_yaml, 'w') as file:
          documents = yaml.dump(target_dict, file, sort_keys=False)
@@ -146,14 +125,14 @@ if __name__ == "__main__":
     analysis_yaml = os.path.join(tmp_folder,arguments.exp_name + '_analysis.yaml')
     with open(analysis_yaml, 'w') as file:
          documents = yaml.dump(analysis_dict, file, sort_keys=False)    
-    ##concatenate all binds
-    bind_all = target_bind + ','+ bam_bind
-    
     ###run EXCAVATOR2
-    run_EXCA2(target_yaml,prepare_yaml,analysis_yaml,bind_all,target_path,arguments.excavator_dir,arguments.thread, no_controls)
-
-    ####rm tmp dir
-    #shutil.rmtree(tmp_folder, ignore_errors=True) 
+    run_EXCA2(
+        tyaml=target_yaml,
+        pyaml=prepare_yaml,
+        ayaml=analysis_yaml,
+        tPath=target_path,
+        ecpu=arguments.thread,
+        no_controls=no_controls)
 
 
     
