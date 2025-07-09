@@ -17,6 +17,43 @@ def phred_scale(p_error):
         return -10 * math.log10(p_error)
     return None
 
+class RecordEntry:
+    # that's the basic structure of a record entry that could be inherited 
+    # for both BED and VCF entries
+    def __init__(self, fields: list, values: list):
+        self.fields = fields
+        self.values = values
+    
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            if key in self.fields:
+                return self.values[self.fields.index(key)]
+            else:
+                raise KeyError(f"Field '{key}' not found in record entry.")
+        elif isinstance(key, int):
+            return self.values[key]
+        else:
+            raise TypeError("Key must be a string or an integer.")
+    
+    def __setitem__(self, key, value):
+        if isinstance(key, str):
+            if key in self.fields:
+                self.values[self.fields.index(key)] = value
+            else:
+                raise KeyError(f"Field '{key}' not found in record entry.")
+        elif isinstance(key, int):
+            self.values[key] = value
+        else:
+            raise TypeError("Key must be a string or an integer.")
+
+    def __str__(self):
+        return "\t".join(str(value) for value in self.values)
+    
+    def _write_to_vcf(self, vcf_file):
+        vcf_str = f"{self['chrom']}\t{self['pos']}\t{self['identifier']}\t.\t<{self['state']}>\t{self['qual']:.2f}\t{self['filter_value']}\t{self['info']}\t{self['format_str']}\t{self['sample_str']}"
+        vcf_file.write(str(vcf_str) + "\n")
+
+
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Convert TSV file to VCF format.')
 parser.add_argument('-td','--tsv_dir', type=str, required=True, help='Directory containing TSV files from HMM output')
@@ -70,17 +107,14 @@ for i in range(len(dirs)):
             fields = line.strip().split('\t')
             if line_num == 0:
                 # The first line is the header; find the index of Median_NRC
-                chr_idx = fields.index("Chr")
-                start_idx = fields.index("Start")
-                end_idx = fields.index("End")
-                state_idx = fields.index("State")
-                cn_idx = fields.index("CN")
-                probcall_idx = fields.index("ProbCall")
-                p_error_idx = fields.index("p_error")
-                median_nrc_idx = fields.index("Median_NRC")
-                window_length_idx = fields.index("window_length")
-                continue  # skip header
-            bed_entries.append(fields)
+                fields_keys = [
+                    field.strip() for field in fields if field in [
+                        "Chr", "Start", "End", "State", "CN", "ProbCall", "p_error", "Median_NRC", "window_length"]]
+                idxs = {field:fields.index(field) for field in fields_keys}
+            else:
+                values = [fields[idxs[field]] for field in fields_keys]
+                bed_entries.append(RecordEntry(
+                    fields=fields_keys, values=values))
         
     #Get current date
     current_date = datetime.now().strftime('%Y%m%d')
@@ -111,66 +145,30 @@ for i in range(len(dirs)):
 
     #Join header lines with newline characters
     header = "\n".join(header_lines) + "\n"
-    
     #write to VCF file
     curr_sample_vcf_output = os.path.join(curr_sample_vcf_output_dir, sample) + ".vcf"
-    
     with open(curr_sample_vcf_output, 'w') as vcf:
         vcf.write(header)
-        
-        for entry_number, entry in enumerate(bed_entries, start=1):
-            #CHROM entry
-            chrom = entry[chr_idx]
-            #POS entry <- Position of the basis before the event
-            pos = int(entry[start_idx]) - 1
-            #End 
-            end = entry[end_idx]
-            #State <- DEL/DUP, corresponds to HMM state #TODO check for DDEL -> DEL
-            state = entry[state_idx]
-            #Call probability
-            probcall = float(entry[probcall_idx])
-            #Non-phred scaled error probability
-            p_error = float(entry[p_error_idx])
-            # Window length
-            window_length = int(entry[window_length_idx])
-            # SVLEN value
-            svlen_val = window_length
-            # Copy number (CN) value
-            cn_value = entry[cn_idx]
-            #Check if copy number is 4+ (meaning 4 or more copies of a TR are present, as of now we cannot discriminate between 4 and more than 4 copies)
-            #If it is 4+ set to 4
-            if cn_value == "4+":
-                cn_value = 4
-            # NRC_PoolNorm value
-            nrc_poolNorm = float(entry[median_nrc_idx])
-            
-            #Set FILTER based on ProbCall
-            if probcall > 0.9:
-                filter_value = "PASS"
-            elif 0.7 <= probcall <= 0.9:
-                filter_value = "MediumQual"
+        # now bed entries is a collection of RecordEntry objects
+        for entry in bed_entries[1:]: # skip the header
+            entry['pos'] = int(entry['Start']) - 1  # Convert to 0-based index
+            entry['ProbCall'] = float(entry['ProbCall'])
+            entry['p_error'] = float(entry['p_error'])
+            entry['window_length'] = int(entry['window_length'])
+            entry['svlen_val'] = entry['window_length']
+            entry['cn_value'] = entry['CN'] if entry['CN'] != "4+" else 4  # Convert "4+" to 4
+            if entry['ProbCall'] > 0.9:
+                entry['filter_value'] = "PASS"
+            elif 0.7 <= entry['ProbCall'] <= 0.9:
+                entry['filter_value'] = "MediumQual"
             else:
-                filter_value = "LowQual"
-            
-            # Apply Phred scaling
-            qual = phred_scale(p_error)
-            
-            # Calculate END value for INFO field
-            end_val = pos + svlen_val
-            
-            # Prepare INFO field
-            info = f"END={end_val};IMPRECISE;SVLEN={svlen_val};SVTYPE=CNV;SVCLAIM=D"
-            
-            # ID column value
-            identifier = f"miXer_{state}_{entry_number}"
-            
-            # Prepare VCF line
-            #REF is hardcoded to "." since it should be the basis (ACTG) before the event # TODO add in next release?
-            format_str = "GT:CN:MNRC:CS"
-            sample_str = f".:{cn_value}:{nrc_poolNorm:.2f}:{probcall:.2f}"
-            
-            vcf_line = f"{chrom}\t{pos}\t{identifier}\t.\t<{state}>\t{qual:.2f}\t{filter_value}\t{info}\t{format_str}\t{sample_str}\n"
-
-            vcf.write(vcf_line)
+                entry['filter_value'] = "LowQual"
+            entry['qual'] = phred_scale(entry['p_error'])
+            entry['end_val'] = entry['pos'] + entry['svlen_val']
+            entry['INFO'] = f"END={entry['end_val']};IMPRECISE;SVLEN={entry['svlen_val']};SVTYPE=CNV;SVCLAIM=D"
+            entry['identifier'] = f"miXer_{entry['State']}_{entry['fields'].index('Start') + 1}"
+            entry['format_str'] = "GT:CN:MNRC:CS"
+            entry['sample_str'] = f".:{entry['cn_value']}:{entry['Median_NRC']:.2f}:{entry['ProbCall']:.2f}"
+            entry._write_to_vcf(vcf)
 
 print("VCF file writing done. MiXer run completed")   
