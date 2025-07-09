@@ -41,7 +41,7 @@ def create_prepare_yaml(confile, bam_dir):
     prepare_dict ={}
     startcount = confile.ID
     for i in range(len(startcount)): ##in case all bam are in different paths, bind each sample singularly
-        bam_name = confile.bamPath[i]
+        bam_name = confile.bamName[i]
         if i < len(startcount)-1:
            bam_bind += bam_dir+'/:/'+confile.ID[i]+'_dir/,'
         else:
