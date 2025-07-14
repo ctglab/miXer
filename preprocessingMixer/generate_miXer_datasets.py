@@ -9,9 +9,21 @@ import rpy2.robjects as robjects
 from rpy2.robjects.conversion import localconverter
 from datetime import datetime
 import shutil
+import json
 import gc
+import logging
 
-  
+# setup logger
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler('mixerDataset.log'),
+        logging.StreamHandler(sys.stdout)
+    ])
+
+
 #### extract_nrc: function that load and extract a R matrix from RData. Matrix in then converted in a pandas df, and df is formatted to keep only the coordinates and RC of IN-target regions 
 def extract_nrc(rdatafile):
     pandas2ri.activate()
@@ -42,9 +54,19 @@ def annotate_target(tar,ref,mapp,gapcen):
     df_with_gc_bed = BedTool.from_dataframe(df_with_gc).sort()
     ##Mappability:
     mapp_file = BedTool(mapp).sort()
-    intersect_map = df_with_gc_bed.intersect(mapp_file, wo=True)
+    intersect_map = df_with_gc_bed.intersect(mapp_file, wo=True, sorted=True)
     df_with_mapp = pd.read_table(intersect_map.fn, names=['chrom', 'start', 'end', 'gc', 'chr_map', 'start_map', 'end_map', 'mappability', 'count']).loc[:, ['chrom','start','end','gc','mappability']]
     df_with_mapp_bed = BedTool.from_dataframe(df_with_mapp).sort()
+    #DEBUG line
+    print(intersect_map.__dict__)
+    import subprocess, glob
+    for tmp_files in glob.glob(os.path.dirname(os.path.abspath(intersect_map.fn)) + "/*.fn"):
+        subprocess.run(['echo', tmp_files])
+        subprocess.run(['head', tmp_files])
+    logging.info(f"Printing the content of {intersect_map.fn}")
+    subprocess.run(['head', intersect_map.fn])
+    print(df_with_mapp.head())
+    print(df_with_gc.head())
     merge_df = df_with_mapp_bed.merge(c=[4,5], o=['distinct','mean'])
     ##remove GAP regions
     final_target=merge_df.intersect(gapcen, v=True)
@@ -72,7 +94,7 @@ def create_training_datasets(targetWfeatures,target,pseud,xlrfile,segdupfile):
     if df_xlr.empty:
        raise ValueError("Check that xlr file is not empty and properly formatted")
     else:
-       print('Creating target file with X-Linked Recessive regions..') 
+       logging.info('Creating target file with X-Linked Recessive regions..') 
     intersect_no_xlr = final_target.intersect(xlr_on_target, v=True)
     ##select no_SegDup target regions
     intersect_no_segdup= intersect_no_xlr.intersect(segdupfile, v=True)
@@ -80,14 +102,14 @@ def create_training_datasets(targetWfeatures,target,pseud,xlrfile,segdupfile):
     if df_nosegdup.empty:
        raise ValueError("Check that segdup file is not empty and properly formatted")
     else: 
-       print('Creating target file with Normal regions..')
+       logging.info('Creating target file with Normal regions..')
     ##select SegDup target regions
     intersect_segdup= intersect_no_xlr.intersect(segdupfile, wo=True)
     df_with_segdup = pd.read_table(intersect_segdup.fn, names=['chrom', 'start', 'end', 'gc', 'mappability', 'length', 'nrc_poolnorm', 'id', 'countX', 'chr_seg', 'start_Seg', 'end_seg', 'count']).loc[:, ['chrom','start','end','gc','mappability','length','nrc_poolnorm','id']].drop_duplicates()
     if df_nosegdup.empty:
        raise ValueError("Check that segdup file is not empty and properly formatted")
     else: 
-       print('Creating target file with Segmental Duplication regions..') 
+       logging.info('Creating target file with Segmental Duplication regions..') 
     return df_xlr, df_nosegdup, df_with_segdup
 
 #### make_dataset function: add sample-specific features to the dataset (used for both training and calling)
@@ -119,7 +141,7 @@ def make_dataset(samplename,infile,pool,df,is_mf =False, mf_mapp_threshold = 0.9
        raise ValueError('Dataset for sample %s is empty, check first config file' % samplename)
     else: 
        if is_mf:
-           print("Selecting High mappability (>= {}) Autosomal exons to train the SVM to detect double (or more) duplications".format(mf_mapp_threshold))
+           logging.info("Selecting High mappability (>= {}) Autosomal exons to train the SVM to detect double (or more) duplications".format(mf_mapp_threshold))
            no_chrx = df_final.loc[~df_final["chrom"].isin(["chrX", "ChrX", "X", "x"])]
            #compatibility with make training dataset columns
            no_chrx.columns = ['chrom','start','end','gc','mappability','length','nrc_poolnorm', 'id']
@@ -164,19 +186,48 @@ def addclass_ddup(ddup_df):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create annotated datasets for training')
-    parser.add_argument('-o', '--output_dir', metavar="", help="path to output dir")
-    parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
-    parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", type=argparse.FileType('r'))
-    parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
-    parser.add_argument('-p','--par', metavar="", help="OPTIONAL: Pseudo-autosomal regions file", required=False)
-    parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
-    parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
+    parser.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
+    parser.add_argument('-s', '--samples', metavar="", required=True, help="miXer samples sheet")
+    parser.add_argument('-o', '--output_dir', metavar="", required=True, help="path to output dir")
     parser.add_argument('-x', '--xlr', metavar="", help="OPTIONAL: XLR genes file", required=False)
-    parser.add_argument('-s', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
-    parser.add_argument('-f','--poolF_nrc', metavar="", help="EXCAVATOR2 Rdata file with nrc from pool of females")
-    parser.add_argument('-e', '--exp_name', default = "", metavar="", help="experiment or target name")
-    parser.add_argument('-cf', '--config', metavar="", help="miXer config file, with duplicated samples if training will be performed")
-    parser.add_argument('-n', '--samples_nrc', nargs='*', metavar="FILES", help="EXCAVATOR2 RCNorm files generated with DataPrepare")
+    parser.add_argument('-sd', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
+    arguments = parser.parse_args()
+    with open(arguments.json, 'r') as j:
+        config = json.load(j)
+    # While this is so hardcoded, these are default paths created during preprocessing
+    poolF_nrc = os.path.join(
+        os.path.abspath(config['main_outdir_host']),
+        config['exp_id'],
+        "_excavator2_output",
+        "output",
+        "DataAnalysis_w50k",
+        "Control",
+        "RCNorm",
+        "Control.NRC.RData"
+    )
+    samples_nrc = os.path.join(
+        os.path.abspath(config['main_outdir_host']),
+        config['exp_id'],
+        "_excavator2_output",
+        "output",
+        "DataPrepare_w50k",
+        "*",
+        "RCNorm",
+        "*RData"
+    )
+
+    # parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
+    # parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", type=argparse.FileType('r'))
+    # parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
+    # parser.add_argument('-p','--par', metavar="", help="OPTIONAL: Pseudo-autosomal regions file", required=False)
+    # parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
+    # parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
+    # parser.add_argument('-x', '--xlr', metavar="", help="OPTIONAL: XLR genes file", required=False)
+    # parser.add_argument('-s', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
+    # parser.add_argument('-f','--poolF_nrc', metavar="", help="EXCAVATOR2 Rdata file with nrc from pool of females")
+    # parser.add_argument('-e', '--exp_name', default = "", metavar="", help="experiment or target name")
+    # parser.add_argument('-cf', '--config', metavar="", help="miXer config file, with duplicated samples if training will be performed")
+    # parser.add_argument('-n', '--samples_nrc', nargs='*', metavar="FILES", help="EXCAVATOR2 RCNorm files generated with DataPrepare")
     #parser.add_argument('-mnorm', '--nrc_median_normalization', default = False, help = "Force NRC_poolNorm median normalization.")
     
     if len(sys.argv)==1:
@@ -188,16 +239,15 @@ if __name__ == "__main__":
 
     ########### DECLARE VARIABLES:
     ####inputs:
-    expname = arguments.exp_name
-    nrc_pool_females = extract_nrc(arguments.poolF_nrc)
+    expname = config['exp_id']
+    nrc_pool_females = extract_nrc(poolF_nrc)
     #cvg_df = pd.read_csv(arguments.coverage_file, sep="\t", index_col=False, names=['id', 'cvg'])
     #cvg_df.id = cvg_df.id.astype(str)
-    target_df=pd.read_csv(arguments.target, sep="\t", index_col=False, header=None)
+    target_df = pd.read_csv(config['target'], sep="\t", index_col=False, header=None)
     #Ensuring that first column of target df is a string
     target_df[0] = target_df[0].astype(str)
     checkb37 = target_df[target_df[0].str.startswith(('chr'))]
-    caseNtrain_df = pd.read_table(arguments.config, sep="\t")
-    
+    caseNtrain_df = pd.read_table(arguments.samples, sep="\t")
     caseNtrain_df.sampleType = caseNtrain_df.sampleType.str.replace(' ', '').str.lower()
     caseNtrain_df.ID = caseNtrain_df.ID.astype(str)
     ##select from config files sample to process for both training and calling
@@ -225,10 +275,10 @@ if __name__ == "__main__":
                         simF.append(thing)
                         found_fem = True
                 except:
-                    print("Gender not found for {} sample. Check config and coverage file.".format(thing))
+                    logging.error("Gender not found for {} sample. Check config and coverage file.".format(thing))
                     exit()
         if found_fem is False:
-            print("{}'s F sample not found. Check config file".format(item))
+            logging.error("{}'s F sample not found. Check config file".format(item))
             exit()
     
     mfs["simF_ID"] = simF
@@ -245,14 +295,14 @@ if __name__ == "__main__":
     helpers.set_tempdir(tmp_folder)
     ####EXCAVATOR2 support files 
     ##mappability: from bigwig to bedtool object 
-    map_bt = contrib.bigwig.bigwig_to_bedgraph(arguments.mapp) #<- final file
+    map_bt = contrib.bigwig.bigwig_to_bedgraph(config['map']) #<- final file
     if checkb37.empty:
        map_df = pd.read_table(map_bt.fn, names=['chr','start','end','mapp'])
        map_df['chr'] = map_df['chr'].str.replace('chr','')
        map_bt = BedTool.from_dataframe(map_df).sort()
     ##open centromeres and GAP files and concatenate 
-    centro = pd.read_table(arguments.centromeres)
-    gap = pd.read_table(arguments.gap)
+    centro = pd.read_table(config['centro'])
+    gap = pd.read_table(config['gap'])
     #extract only chrom interval
     gap = gap[['chrom','chromStart','chromEnd']]
     centrogap = pd.concat([centro,gap]).sort_values(by=['chrom','chromStart','chromEnd']).drop_duplicates().reset_index(drop=True)
@@ -260,11 +310,11 @@ if __name__ == "__main__":
        centrogap['chrom'] = centrogap['chrom'].str.replace('chr','')
     centrogap_bt = BedTool.from_dataframe(centrogap).sort() #<- final file
     ##EXCAVATOR2 genome
-    genomeFasta = arguments.ref
+    genomeFasta = config['ref']
     
     ####miXer-only support files:
     if ((not train_only.empty) | (not both.empty)):
-       par_bt = BedTool(arguments.par).sort()
+       par_bt = BedTool(config['par']).sort()
        xlr_bt = BedTool(arguments.xlr).sort()
        segdup_bt = BedTool(arguments.segdup).merge().sort()
     
@@ -299,7 +349,7 @@ if __name__ == "__main__":
        outFddup.to_csv(ddup_setOut, mode='w', sep='\t', index=False)
        outF_xlr_ddup = pd.DataFrame(columns = ['Chr','Start','End','GC_content','Mappability','Length','NRC_poolNorm', 'ID','Class'])
        
-    samples_paths = arguments.samples_nrc
+    samples_paths = samples_nrc
     
     #separing MF file paths and other samples file paths
     mf_only = [x for x in samples_paths if '.'.join(os.path.basename(x).split(".")[:-2]) in mfs["ID"].to_list()]
@@ -308,18 +358,18 @@ if __name__ == "__main__":
     
     ############DATASETS CREATION
     
-    print('Starting target annotation...')
+    logging.info('Starting target annotation...')
     final_target_df=annotate_target(target_df,genomeFasta,map_bt,centrogap_bt)
     ##if there are any training samples, do chrX annotation
     
-    print('Starting M and F datasets creation...')
+    logging.info('Starting M and F datasets creation...')
     nrc_median_F_df = pd.DataFrame(columns = ["F_ID", "AutNRC_poolNorm_median"])
     
     for file in the_others:
         name = '.'.join(os.path.basename(file).split(".")[:-2])
         
         if (name in train_only.ID.astype(str).to_list())  or (name in call_only.ID.astype(str).to_list()) or (name in both.ID.astype(str).to_list()):
-            print("Now processing sample {}".format(name))
+            logging.info("Now processing sample {}".format(name))
             nrc_rdata2bed = extract_nrc(file)
             
             full_annot_target, nrc_median = make_dataset(name,nrc_rdata2bed,nrc_pool_females,final_target_df)
@@ -327,7 +377,7 @@ if __name__ == "__main__":
             ##samples only required for training
             if name in train_only.ID.astype(str).to_list():
                 df_xlr, df_nosegdup, df_with_segdup = create_training_datasets(full_annot_target,target_df,par_bt,xlr_bt,segdup_bt) 
-                print('Saving training sample {}\n'.format(name))
+                logging.info('Saving training sample {}\n'.format(name))
                 gender = train_only.loc[train_only['ID']== name].Gender.to_list()[0]
                 if gender in ["F", "f", "female"]:
                     nrc_median_F_df = pd.concat([nrc_median_F_df, pd.DataFrame(data = { "F_ID": [name], "AutNRC_poolNorm_median": [nrc_median]})])
@@ -338,8 +388,8 @@ if __name__ == "__main__":
             ##samples only required for calling   
             elif name in call_only.ID.astype(str).to_list():
 
-                print('Saving use-case processed sample {}\n'.format(name))
-                print("Saving sample to {}\n".format(dataset_test_dir))
+                logging.info('Saving use-case processed sample {}\n'.format(name))
+                logging.info("Saving sample to {}\n".format(dataset_test_dir))
                 target_setOut= os.path.join(dataset_test_dir,name+'_TARGET.txt.gz') 
                 outFtarget = pd.DataFrame(columns = ['Chr','Start','End','GC_content','Mappability','Length','NRC_poolNorm','ID'])
                 outFtarget.to_csv(target_setOut, mode='w', sep='\t', index=False)
@@ -364,12 +414,12 @@ if __name__ == "__main__":
                 full_annot_target.to_csv(target_setOut, mode='a', sep='\t', index=False, header=False, compression="gzip")
         else:
             continue 
-    print('Starting MF datasets creation...')
+    logging.info('Starting MF datasets creation...')
     for file in mf_only:
         name = '.'.join(os.path.basename(file).split(".")[:-2])
         
         if name in train_only.ID.astype(str).to_list():
-            print("Now processing sample {}".format(name))
+            logging.info("Now processing sample {}".format(name))
             #match with f sample tag
             f_samp = mfs.loc[mfs["ID"] == name]["simF_ID"].values[0]
             nrc_rdata2bed = extract_nrc(file)
@@ -380,7 +430,7 @@ if __name__ == "__main__":
             if df_ddup.shape[0] > int(df_xlr.shape[0]/3): #numero arbitrario, modificabile
                 df_ddup = df_ddup.sample(n = int(df_xlr.shape[0]/3), random_state = 42, ignore_index = True)
                 
-            print('Saving training sample {}\n'.format(name))
+            logging.info('Saving training sample {}\n'.format(name))
             gender = train_only.loc[train_only['ID']== name].Gender.to_list()[0]
             
             #add classes
