@@ -36,7 +36,7 @@ def extract_nrc(rdatafile):
     return df_frt
 
 #### fix_target: keep only chromosomal coordinates (remove additional columns if present)
-def fix_target(a):
+def fix_target(a: pd.DataFrame) -> BedTool:
     target_slice=a.iloc[:,:3]
     if any(c.isalpha() for c in str(target_slice.iloc[0,2])) == True:
        target_slice = target_slice.drop([0]).reset_index(drop=True)
@@ -47,35 +47,28 @@ def fix_target(a):
         return target_bed
         
 #### annotate_target: add target-specifi features (mappability, GC content, length)--> made for all chromosomes
-def annotate_target(tar,ref,mapp,gapcen):
-    ##GC_content: 
-    nuc = BedTool.nucleotide_content(fix_target(tar), fi=ref)
-    df_with_gc = pd.read_table(nuc.fn).loc[:, ['#1_usercol', '2_usercol', '3_usercol', '5_pct_gc']]
-    df_with_gc_bed = BedTool.from_dataframe(df_with_gc).sort()
-    ##Mappability:
-    mapp_file = BedTool(mapp).sort()
-    intersect_map = df_with_gc_bed.intersect(mapp_file, wo=True, sorted=True)
-    df_with_mapp = pd.read_table(intersect_map.fn, names=['chrom', 'start', 'end', 'gc', 'chr_map', 'start_map', 'end_map', 'mappability', 'count']).loc[:, ['chrom','start','end','gc','mappability']]
-    df_with_mapp_bed = BedTool.from_dataframe(df_with_mapp).sort()
-    #DEBUG line
-    print(intersect_map.__dict__)
-    import subprocess, glob
-    for tmp_files in glob.glob(os.path.dirname(os.path.abspath(intersect_map.fn)) + "/*.fn"):
-        subprocess.run(['echo', tmp_files])
-        subprocess.run(['head', tmp_files])
-    logging.info(f"Printing the content of {intersect_map.fn}")
-    subprocess.run(['head', intersect_map.fn])
-    print(df_with_mapp.head())
-    print(df_with_gc.head())
-    merge_df = df_with_mapp_bed.merge(c=[4,5], o=['distinct','mean'])
-    ##remove GAP regions
-    final_target=merge_df.intersect(gapcen, v=True)
-    final_target = pd.read_table(final_target.fn, names=['Chr', 'Start', 'End', 'GC_content', 'Mappability'])
-    ##length:
+def annotate_target(tar: pd.DataFrame, ref: str, mapp: str, gapcen: BedTool):
+    target_bed = fix_target(tar)
+    # pybedtools could do things in pipe. 
+    final_bed = (
+        # gc content
+        target_bed.nucleotide_content(fi=ref)
+        # pybedtools uses 0-based indexing for cut, so we use 0, 1, 2, 4.
+        .cut([0, 1, 2, 4])
+        # map is more efficient that intersect - pandas merge
+        .map(b=mapp, c=4, o='mean')
+        # remove gaps
+        .intersect(gapcen, v=True)
+    )
+    # convert then to pandas
+    final_target = final_bed.to_dataframe(
+        names=['Chr', 'Start', 'End', 'GC_content', 'Mappability']
+    )
     final_target['Length'] = final_target['End'].sub(final_target['Start'])
-    del nuc, df_with_gc, df_with_gc_bed, mapp_file, intersect_map, df_with_mapp, df_with_mapp_bed, merge_df
+    logging.info(f"Annotation completed")
+    # Check for an empty result after all filtering.
     if final_target.empty:
-       raise ValueError("Check that target file is not empty and properly formatted")
+       raise ValueError("Check that target file is not empty and properly formatted after filtering.")
     else:    
        return final_target
 
@@ -172,17 +165,6 @@ def addclass_ddup(ddup_df):
     ddup_df["Class"] = "2"
     return ddup_df
 
-###################################################MAIN####################################################
-#### file di config deve contenere:
-#  ID path_bam M/F c,t/train #c = controlli, t = casi, train= sample per addestramento svm
-#  i.e:
-#  GM01 /path/to/file.bam F c
-#  GM02 /path/to/file1.bam F t
-#  GM03 /path/to/file2.bam M t,train
-#
-#  idea: separare in 3 variabili all'inizio (c, caseNtrain)
-#  M+F si aggiungono a caseNtrain
-####
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create annotated datasets for training')
@@ -215,21 +197,6 @@ if __name__ == "__main__":
         "RCNorm",
         "*RData"
     )
-
-    # parser.add_argument('-t', '--target', metavar="", help="target bed file - the same used for alignment and EXCAVATOR2")
-    # parser.add_argument('-r','--ref', metavar="", help="reference fasta file - the same used for alignment and EXCAVATOR2", type=argparse.FileType('r'))
-    # parser.add_argument('-m','--mapp', metavar="", help="EXCAVATOR2 bigwig mappability file")
-    # parser.add_argument('-p','--par', metavar="", help="OPTIONAL: Pseudo-autosomal regions file", required=False)
-    # parser.add_argument('-g','--gap', metavar="", help="EXCAVATOR2 GAP regions file")
-    # parser.add_argument('-cm','--centromeres', metavar="", help="EXCAVATOR2 centromeres file")
-    # parser.add_argument('-x', '--xlr', metavar="", help="OPTIONAL: XLR genes file", required=False)
-    # parser.add_argument('-s', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
-    # parser.add_argument('-f','--poolF_nrc', metavar="", help="EXCAVATOR2 Rdata file with nrc from pool of females")
-    # parser.add_argument('-e', '--exp_name', default = "", metavar="", help="experiment or target name")
-    # parser.add_argument('-cf', '--config', metavar="", help="miXer config file, with duplicated samples if training will be performed")
-    # parser.add_argument('-n', '--samples_nrc', nargs='*', metavar="FILES", help="EXCAVATOR2 RCNorm files generated with DataPrepare")
-    #parser.add_argument('-mnorm', '--nrc_median_normalization', default = False, help = "Force NRC_poolNorm median normalization.")
-    
     if len(sys.argv)==1:
         print()
         print("Usage: python", sys.argv[0]," --help")
