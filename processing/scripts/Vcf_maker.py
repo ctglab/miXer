@@ -31,10 +31,7 @@ def phred_scale(p_error):
     return None
 
 class RecordEntry(dict):
-    # that's the basic structure of a record entry that could be inherited for both BED and VCF entries
-    def __str__(self):
-        return "\t".join(str(value) for value in self.values)
-    
+    # that's the basic structure of a record entry that could be inherited for both BED and VCF entries    
     def _write_to_vcf(self, vcf_file):
         vcf_str = f"{self['Chr']}\t{self['pos']}\t{self['identifier']}\t.\t<{self['State']}>\t{self['qual']:.2f}\t{self['filter_value']}\t{self['INFO']}\t{self['format_str']}\t{self['sample_str']}"
         vcf_file.write(str(vcf_str) + "\n")
