@@ -76,9 +76,7 @@ ap.add_argument("-chrx_dataFolder", "--chrX_dataFolder", default = DEFAULT_CHRX_
 args = vars(ap.parse_args())
 with open(args['json'], 'r') as j:
     config = json.load(j)
-# this is taken there to prevent passing the exp_id outside
-#BUG!!!
-PREPARED_SVM_DIR = os.path.join(config['main_outdir_host'], "mixer", "*_datasets_testing_*")
+PREPARED_SVM_DIR = os.path.join(config['main_outdir_host'], "*_datasets_testing_*")
 model_directory = args["model_directory"]
 num_thr = int(config["threads"])
 logging.info(f"PREPARED svm dir is: {PREPARED_SVM_DIR}")
