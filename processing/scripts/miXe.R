@@ -13,7 +13,7 @@ def_bw_delta <- 1E-9
 
 option_list = list(
   make_option(c("-j", "--json"), type="character", help="Path to the miXer json file"),
-  make_option(c("-w", "--work_directory"), type="character", default=dir.path(dirname(sub("--file=", "", commandArgs(trailingOnly = FALSE)[4])), "HMM_resources"), help="This script's working directory."),
+  make_option(c("-w", "--work_directory"), type="character", default=file.path(dirname(sub("--file=", "", commandArgs(trailingOnly = FALSE)[4])), "HMM_resources"), help="This script's working directory."),
   make_option(c("-D", "--dataset_directory"), type="character", default=NULL, help="Path to sample folders."),
   make_option(c("-o", "--output_directory"), type="character", default=file.path(getwd(), "HMM_processed_output"), help="Specify output directory."),
   # make_option(c("-z", "--script_resource_dir"), type="character", default=file.path(getwd(), 'HMM_resources'), help="Path pointing to script resources."),
@@ -25,7 +25,6 @@ option_list = list(
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
-print(opt)
 source(file.path(opt$work_directory, "get_model_id.R"))
 source(file.path(opt$work_directory, "train_hmm.R"))
 source(file.path(opt$work_directory, "get_hmm_states_by_chromosome.R"))
@@ -211,7 +210,6 @@ for (sample_path in all_samples) {
         samples_to_process[[sample]] <- list(path = subfolder_path[1])
     }
 }
-
 cat(sprintf("Found %d samples to process.\n", length(samples_to_process)))
 
 config <- c(opt, list(json_data = json_data, par_regions = par_regions, x_aliases = x_aliases))
