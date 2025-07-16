@@ -8,6 +8,7 @@ from rpy2.robjects import pandas2ri,r
 import rpy2.robjects as robjects
 from rpy2.robjects.conversion import localconverter
 from datetime import datetime
+import glob
 import shutil
 import json
 import gc
@@ -187,7 +188,7 @@ if __name__ == "__main__":
         "RCNorm",
         "Control.NRC.RData"
     )
-    samples_nrc = os.path.join(
+    samples_nrc = glob.glob(os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id'],
         "_excavator2_output",
@@ -196,7 +197,7 @@ if __name__ == "__main__":
         "*",
         "RCNorm",
         "*RData"
-    )
+    ))
     if len(sys.argv)==1:
         print()
         print("Usage: python", sys.argv[0]," --help")
@@ -331,7 +332,6 @@ if __name__ == "__main__":
     
     logging.info('Starting M and F datasets creation...')
     nrc_median_F_df = pd.DataFrame(columns = ["F_ID", "AutNRC_poolNorm_median"])
-    
     for file in the_others:
         name = '.'.join(os.path.basename(file).split(".")[:-2])
         
