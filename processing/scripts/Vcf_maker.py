@@ -10,6 +10,19 @@ import os
 import math
 import argparse
 from datetime import datetime
+import logging
+import sys
+
+# setup logger
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler('mixerDataset.log'),
+        logging.StreamHandler(sys.stdout)
+    ])
+
 
 #Function to apply Phred scaling
 def phred_scale(p_error):
@@ -17,40 +30,13 @@ def phred_scale(p_error):
         return -10 * math.log10(p_error)
     return None
 
-class RecordEntry:
-    # that's the basic structure of a record entry that could be inherited 
-    # for both BED and VCF entries
-    def __init__(self, fields: list, values: list):
-        self.fields = fields
-        self.values = values
-    
-    def __getitem__(self, key):
-        if isinstance(key, str):
-            if key in self.fields:
-                return self.values[self.fields.index(key)]
-            else:
-                raise KeyError(f"Field '{key}' not found in record entry.")
-        elif isinstance(key, int):
-            return self.values[key]
-        else:
-            raise TypeError("Key must be a string or an integer.")
-    
-    def __setitem__(self, key, value):
-        if isinstance(key, str):
-            if key in self.fields:
-                self.values[self.fields.index(key)] = value
-            else:
-                raise KeyError(f"Field '{key}' not found in record entry.")
-        elif isinstance(key, int):
-            self.values[key] = value
-        else:
-            raise TypeError("Key must be a string or an integer.")
-
+class RecordEntry(dict):
+    # that's the basic structure of a record entry that could be inherited for both BED and VCF entries
     def __str__(self):
         return "\t".join(str(value) for value in self.values)
     
     def _write_to_vcf(self, vcf_file):
-        vcf_str = f"{self['chrom']}\t{self['pos']}\t{self['identifier']}\t.\t<{self['state']}>\t{self['qual']:.2f}\t{self['filter_value']}\t{self['info']}\t{self['format_str']}\t{self['sample_str']}"
+        vcf_str = f"{self['Chr']}\t{self['pos']}\t{self['identifier']}\t.\t<{self['State']}>\t{self['qual']:.2f}\t{self['filter_value']}\t{self['INFO']}\t{self['format_str']}\t{self['sample_str']}"
         vcf_file.write(str(vcf_str) + "\n")
 
 
@@ -113,8 +99,10 @@ for i in range(len(dirs)):
                 idxs = {field:fields.index(field) for field in fields_keys}
             else:
                 values = [fields[idxs[field]] for field in fields_keys]
-                bed_entries.append(RecordEntry(
-                    fields=fields_keys, values=values))
+                bed_entry = RecordEntry()
+                for k,v in zip(fields_keys, values):
+                    bed_entry[k] = v
+                bed_entries.append(bed_entry)
         
     #Get current date
     current_date = datetime.now().strftime('%Y%m%d')
@@ -150,9 +138,10 @@ for i in range(len(dirs)):
     with open(curr_sample_vcf_output, 'w') as vcf:
         vcf.write(header)
         # now bed entries is a collection of RecordEntry objects
-        for entry in bed_entries[1:]: # skip the header
+        for i, entry in enumerate(bed_entries[1:], start=1): # skip the header
             entry['pos'] = int(entry['Start']) - 1  # Convert to 0-based index
             entry['ProbCall'] = float(entry['ProbCall'])
+            entry['entry_number'] = i
             entry['p_error'] = float(entry['p_error'])
             entry['window_length'] = int(entry['window_length'])
             entry['svlen_val'] = entry['window_length']
@@ -166,9 +155,8 @@ for i in range(len(dirs)):
             entry['qual'] = phred_scale(entry['p_error'])
             entry['end_val'] = entry['pos'] + entry['svlen_val']
             entry['INFO'] = f"END={entry['end_val']};IMPRECISE;SVLEN={entry['svlen_val']};SVTYPE=CNV;SVCLAIM=D"
-            entry['identifier'] = f"miXer_{entry['State']}_{entry['fields'].index('Start') + 1}"
+            entry['identifier'] = f"miXer_{entry['State']}_{entry['entry_number']}"
             entry['format_str'] = "GT:CN:MNRC:CS"
-            entry['sample_str'] = f".:{entry['cn_value']}:{entry['Median_NRC']:.2f}:{entry['ProbCall']:.2f}"
+            entry['sample_str'] = f".:{entry['cn_value']}:{float(entry['Median_NRC']):.2f}:{float(entry['ProbCall']):.2f}"
             entry._write_to_vcf(vcf)
-
 print("VCF file writing done. MiXer run completed")   
