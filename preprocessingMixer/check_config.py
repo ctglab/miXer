@@ -23,7 +23,7 @@ except Exception as e:
 
 # Normalize fields
 df["ID"] = df["ID"].str.strip()
-df["bamPath"] = df["bamPath"].str.strip()
+df["bamName"] = df["bamName"].str.strip()
 df["Gender"] = df["Gender"].str.strip().str.lower()
 df["sampleType"] = df["sampleType"].str.strip().str.lower()
 
@@ -44,9 +44,9 @@ if not invalid_gender.empty or not invalid_analysis.empty:
 
 # Construct full BAM paths (if bam_dir provided)
 if args.bam_dir:
-    df["full_bam_path"] = df["bamPath"].apply(lambda x: os.path.join(args.bam_dir, x))
+    df["full_bam_path"] = df["bamName"].apply(lambda x: os.path.join(args.bam_dir, x))
 else:
-    df["full_bam_path"] = df["bamPath"]
+    df["full_bam_path"] = df["bamName"]
 
 # Check BAM file existence
 missing_bams = df[~df["full_bam_path"].apply(os.path.exists)]
