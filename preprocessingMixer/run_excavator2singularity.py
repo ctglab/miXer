@@ -37,7 +37,6 @@ def guess_assembly(centromere_exca):
     ref = os.path.splitext(os.path.basename(centromere_exca))[0].split('_')[1]
     return ref    
 
-<<<<<<< HEAD
 def create_target_yaml(config: dict, tmp: str, window_size=50000) -> str:
     """
     the structure of the yaml from excavator2 is the following
@@ -65,36 +64,6 @@ def create_target_yaml(config: dict, tmp: str, window_size=50000) -> str:
     ):
         if yaml_key == 'Assembly':
             target_dict['Reference'][yaml_key] = assembly
-=======
-def create_target_yaml(cen,fasta,bw,chromos,gap,tar,tmp):
-    assem = guess_assembly(cen)
-    fasta_dir = os.path.dirname(fasta)
-    fasta_name = os.path.basename(fasta)
-    bw_dir = os.path.dirname(bw)
-    bw_name = os.path.basename(bw)
-    chr_dir = os.path.dirname(chromos)
-    chr_name = os.path.basename(chromos)
-    cen_dir = os.path.dirname(cen)
-    cen_name = os.path.basename(cen)
-    gap_dir = os.path.dirname(gap)
-    gap_name = os.path.basename(gap)    
-    target_dir = os.path.dirname(tar)
-    target_name = os.path.basename(tar)
-    dir_name = os.path.splitext(os.path.basename(tar))[0]
-    target_dict = {'Reference' : {'Assembly': assem, 'FASTA': '/efasta/'+fasta_name, 'BigWig':'/ebw/'+bw_name, 'Chromosomes': '/echr/'+chr_name,'Centromeres':'/ecen/'+cen_name,'Gaps': '/egap/'+gap_name},'Target' : {'Name':dir_name, 'BED':'/etarget/'+target_name, 'Window': int(50000)}}
-    target_bind = fasta_dir+'/:/efasta/,'+bw_dir+'/:/ebw/,'+chr_dir+'/:/echr/,'+cen_dir+'/:/ecen/,'+gap_dir+'/:/egap/,'+target_dir+'/:/etarget/,'+tmp+'/:/output/'
-    target_path = '/output/Target/'+target_dict['Reference']['Assembly']+'/'+target_dict['Target']['Name']+'/w_50000'  
-    return target_dict,target_bind,target_path
-    
-def create_prepare_yaml(confile, bam_dir):    
-    bam_bind = ''
-    prepare_dict ={}
-    startcount = confile.ID
-    for i in range(len(startcount)): ##in case all bam are in different paths, bind each sample singularly
-        bam_name = confile.bamName[i]
-        if i < len(startcount)-1:
-           bam_bind += bam_dir+'/:/'+confile.ID[i]+'_dir/,'
->>>>>>> main
         else:
             target_dict['Reference'][yaml_key] = config[json_key]
     target_dict['Target']['Name'] = target_name

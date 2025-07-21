@@ -171,12 +171,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create annotated datasets for training')
     parser.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
     parser.add_argument('-s', '--samples', metavar="", required=True, help="miXer samples sheet")
-    parser.add_argument('-o', '--output_dir', metavar="", required=True, help="path to output dir")
     parser.add_argument('-x', '--xlr', metavar="", help="OPTIONAL: XLR genes file", required=False)
     parser.add_argument('-sd', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
     arguments = parser.parse_args()
     with open(arguments.json, 'r') as j:
         config = json.load(j)
+    outdir = os.path.join(
+        os.path.abspath(config['main_outdir_host']),
+        config['exp_id']
+    )
     # While this is so hardcoded, these are default paths created during preprocessing
     poolF_nrc = os.path.join(
         os.path.abspath(config['main_outdir_host']),
@@ -289,12 +292,12 @@ if __name__ == "__main__":
     ####create folders:
     #create training/test set directory
     if ((not train_only.empty) | (not both.empty)):
-        dataset_dir = os.path.join(out_dir, expname+'_datasets_'+date)
+        dataset_dir = os.path.join(out_dir, f'_datasets_{date}')
         if not os.path.exists(dataset_dir):
            os.makedirs(dataset_dir)
     #create calling dataset directory
     if ((not call_only.empty) | (not both.empty)):
-       dataset_test_dir = os.path.join(out_dir,expname + '_datasets_testing_'+date)
+       dataset_test_dir = os.path.join(out_dir, f'_datasets_testing_{date}')
        if not os.path.exists(dataset_test_dir):
           os.makedirs(dataset_test_dir)
     #sample_dir = os.path.join(dataset_dir,arguments.exp_name)

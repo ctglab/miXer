@@ -101,15 +101,13 @@ elif [[ "$1" = "inference" ]]; then
         python3 -u /app/preprocessingMixer/generate_miXer_datasets.py \
             -j "$JSON_FILE" \
             -s "$SAMPLES_FILE" \
-            -o "$OUTDIR" \
             ${XLR_FILE:+-x "$XLR_FILE"} \
             ${SEGDUP_FILE:+-sd "$SEGDUP_FILE"}
 
         micromamba activate miXer_ml
         echo "Running SVM inference"
         python3 -u /app/processing/scripts/miXer_inference.py \
-            -j "$JSON_FILE" \
-            -o "$OUTDIR_SVM" \
+            -j "$JSON_FILE" 
         
         HMM_PATH=$(find "${OUTDIR_SVM}" -type d -name "?_SVC" | head -n 1)
         if [[ -z "$HMM_PATH" ]]; then
@@ -120,8 +118,6 @@ elif [[ "$1" = "inference" ]]; then
         echo "Running HMM filtering"
         Rscript /app/processing/scripts/miXe.R \
             -j "$JSON_FILE" \
-            -o "${OUTDIR_HMM}" \
-            -D "$HMM_PATH" \
             ${BW_ITERATIONS:+-b "$BW_ITERATIONS"} \
             ${BW_DELTA:+-d "$BW_DELTA"} 
         
@@ -129,8 +125,9 @@ elif [[ "$1" = "inference" ]]; then
         echo "Writing VCFs"
         OUTDIR_VCF="${OUTDIR}/${OUTDIR_VCF}"
         python3 -u /app/processing/scripts/Vcf_maker.py \
-            -td "${OUTDIR_HMM}" \
-            -od "${OUTDIR_VCF}" \
+            -j "$JSON_FILE" \
+            # -td "${OUTDIR_HMM}" \
+            # -od "${OUTDIR_VCF}" \
             ${REFERENCE:+-ref "$REFERENCE"} \
 
 else

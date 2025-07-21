@@ -62,12 +62,7 @@ np.random.seed(SEED_VALUE) #fixed numpy's random module seed
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
-# ap.add_argument("-tst", "--test_directory", nargs = "*", required = True, help = "Test data directory. Multiple directories allowed.")
 ap.add_argument("-mdir", "--model_directory",required = False, default = DEFAULT_MODEL_DIR, help = "Directory in which to find the trained model and scaler.\nBoth must be present.")
-
-# ap.add_argument("-tst_exp_tags", "--tst_experiment_tags", nargs = "*", default = None, help = "Experiment(s) name. Must have the same number of experiment tags and -tst folders. Default = tst_folder_name + '_TestX' with X from 0 to #test folders.")
-ap.add_argument("-output", "--test_output_folder_path", default = default_usecase_output_folder, required = False, help = "Path to test data's output folder. Default = {}".format(default_usecase_output_folder))
-ap.add_argument("-ntr", "--num_threads", default = DEFAULT_NUMTHREADS, required = False, help = "Number of threads to use for cross validation of models. Default = {}".format(DEFAULT_NUMTHREADS))
 ap.add_argument("-force_mnorm", "--force_test_median_normalization", default = DEFAULT_FORCE_MNORM, help = "Whether to force the median normalization of test samples. Default = {}".format(DEFAULT_FORCE_MNORM))
 ap.add_argument("-skipTested", "--skip_sample_if_tested", default = DEFAULT_SKIP_TESTED, required = False, help = "Whether to skip the prediction on a sample. Useful if redoing the prediction but not retraining the model. Default = {}".format(DEFAULT_SKIP_TESTED))
 ap.add_argument("-vrb", "--verbose_level", default = DEFAULT_VERBOSE_LVL, required = False, help = "Integer to select the verbosity of this script. 0 is max silence, TBD is fullly verbose.\nDefault = {}".format(DEFAULT_VERBOSE_LVL))
@@ -76,14 +71,17 @@ ap.add_argument("-chrx_dataFolder", "--chrX_dataFolder", default = DEFAULT_CHRX_
 args = vars(ap.parse_args())
 with open(args['json'], 'r') as j:
     config = json.load(j)
-PREPARED_SVM_DIR = os.path.join(config['main_outdir_host'], "*_datasets_testing_*")
+PREPARED_SVM_DIR = os.path.join(
+    os.path.abspath(config['main_outdir_host']),
+    config['exp_id'],
+    "_datasets_testing_*")
 model_directory = args["model_directory"]
 num_thr = int(config["threads"])
 logging.info(f"PREPARED svm dir is: {PREPARED_SVM_DIR}")
 na_paths = glob.glob(PREPARED_SVM_DIR) #TODO: simplify
 logging.info(f"Detected {len(na_paths)} samples from the given folder: these are {na_paths}")
-usecase_output_folder = args["test_output_folder_path"]
 expnames = config['exp_id']
+usecase_output_folder = os.path.join(args["test_output_folder_path"], expnames)
 force_test_median_normalization = str_to_bool(args["force_test_median_normalization"], "Force Test samples median normalization")
 skip_tested = str_to_bool(args["skip_sample_if_tested"], "Skip prediction if file already present")
 verbose = int(args["verbose_level"])

@@ -12,6 +12,7 @@ import argparse
 from datetime import datetime
 import logging
 import sys
+import json
 
 # setup logger
 logging.basicConfig(
@@ -39,22 +40,27 @@ class RecordEntry(dict):
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Convert TSV file to VCF format.')
-parser.add_argument('-td','--tsv_dir', type=str, required=True, help='Directory containing TSV files from HMM output')
-parser.add_argument('-od', '--output_dir', type=str, help='Output directory for VCF files', default = None)
+parser.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
+# parser.add_argument('-td','--tsv_dir', type=str, required=True, help='Directory containing TSV files from HMM output')
+# parser.add_argument('-od', '--output_dir', type=str, help='Output directory for VCF files', default = None)
 parser.add_argument('-ref', '--reference', type=str, default='unspecified', help='Reference genome version (default: "unspecified")')
 parser.add_argument('-hc', '--hc_only', action='store_true', help ='Boolean flag to use only pre-filtered HC>=0.9 TSV windows file for VCF creation. False if not specified.')
 args = parser.parse_args()
-
+with open(args['json'], 'r') as j:
+    config = json.load(j)
 # Determine VCF output directory
-
-if args.output_dir is None:
-    bed_parent_dir = os.path.dirname(os.path.dirname(args.tsv_dir)) #TODO fix it?
-    vcf_dir = os.path.join(bed_parent_dir, "VCF")
-else:
-    vcf_dir = args.output_dir
-
+tsv_dir = os.path.join(
+    os.path.abspath(config['main_outdir_host']),
+    config['exp_id'],
+    "_mixer_windows"
+)
+output_dir = os.path.join(
+    os.path.abspath(config['main_outdir_host']),
+    config['exp_id'],
+    "_mixer_vcfs"
+) 
 # Get all subfolders in the tsv_dir and get sample names
-for _, dirs, _ in os.walk(args.tsv_dir):
+for _, dirs, _ in os.walk(tsv_dir):
     # sanitize directory name to remove _TARGET
     samples = [x.replace("_TARGET", "") for x in dirs]
     break
@@ -63,9 +69,9 @@ for i in range(len(dirs)):
     #Get current sample id
     sample = samples[i]
     #Get current sample's TSV file dir
-    curr_sample_dir = os.path.join(args.tsv_dir, dirs[i])
+    curr_sample_dir = os.path.join(tsv_dir, dirs[i])
     #Define current sample's VCF output dir
-    curr_sample_vcf_output_dir = os.path.join(vcf_dir, dirs[i])
+    curr_sample_vcf_output_dir = os.path.join(output_dir, dirs[i])
     
     #Check if output dir exists, if not, create it
     if not os.path.isdir(curr_sample_vcf_output_dir):

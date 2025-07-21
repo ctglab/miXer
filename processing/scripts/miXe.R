@@ -14,9 +14,6 @@ def_bw_delta <- 1E-9
 option_list = list(
   make_option(c("-j", "--json"), type="character", help="Path to the miXer json file"),
   make_option(c("-w", "--work_directory"), type="character", default=file.path(dirname(sub("--file=", "", commandArgs(trailingOnly = FALSE)[4])), "HMM_resources"), help="This script's working directory."),
-  make_option(c("-D", "--dataset_directory"), type="character", default=NULL, help="Path to sample folders."),
-  make_option(c("-o", "--output_directory"), type="character", default=file.path(getwd(), "HMM_processed_output"), help="Specify output directory."),
-  # make_option(c("-z", "--script_resource_dir"), type="character", default=file.path(getwd(), 'HMM_resources'), help="Path pointing to script resources."),
   make_option(c("-n", "--use_noise"), type="logical", default=TRUE, help="Load dataframes processed with miXer SVM trained on noisy XLR dataset."),
   make_option(c("-b", "--max_baum_welch_iterations"), type="numeric", default=def_hmm_bw_max_iter, help="Maximum Baum-Welch algorithm iterations."),
   make_option(c("-d", "--baum_welch_delta"), type="numeric", default=def_bw_delta, help="Minimum parameter delta for Baum-Welch algorithm."),
@@ -184,16 +181,34 @@ process_sample <- function(sample_name, sample_info, config) {
 }
 
 json_data <- fromJSON(opt$json)
+# define output directory following the same pattern 
+output_directory <- file.path(
+  json_data$main_outdir_host,
+  json_data$exp_id,
+  "_mixer_windows"
+)
+dataset_directory <- file.path(
+  json_data$main_outdir_host,
+  json_data$exp_id,
+  "_svm_processed_output"
+)
+# find subdirectories using the pattern *_SVC from the dataset_directory
+dataset_directory <- list.dirs(
+  path = dataset_directory, 
+  full.names = TRUE, 
+  recursive = FALSE
+) 
+dataset_directory <- dataset_directory[grepl("_SVC$", dataset_directory)]
 par_regions <- read.table(json_data$par, header=FALSE, col.names=c("Chr", "Start", "End"))
 x_aliases <- c("chrX", "ChrX", "chrx", "X", "x")
 
 dir.create(opt$output_directory, showWarnings = FALSE, recursive = TRUE)
 
 model_id <- "SVC"
-all_samples <- list.dirs(opt$dataset_directory, full.names = TRUE, recursive = FALSE)
+all_samples <- list.dirs(dataset_directory, full.names = TRUE, recursive = FALSE)
 
 if (isTRUE(opt$resume_execution)) {
-  already_processed <- list.files(opt$output_directory, full.names = FALSE)
+  already_processed <- list.files(output_directory, full.names = FALSE)
   all_samples <- setdiff(all_samples, already_processed)
 }
 samples_to_process <- list()
