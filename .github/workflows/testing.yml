@@ -6,7 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: ctglabcnr/mixer:merged_entrypoint #to be updated
+      image: ctglabcnr/mixer:merged_entrypoint
+      options: --workdir app
 
     steps:
       - name: Checkout repository
@@ -50,10 +51,5 @@ jobs:
 
       - name: Run tests
         run: |
-          docker run --rm \
-          -v ${{ github.workspace }}:/app \
-          ctglabcnr/mixer:merged_entrypoint \
-          bash -c "
-          /app/entrypoint/mixer.sh preprocessing -j /app/.test/config.json &&
-          /app/entrypoint/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv 
-          "
+          bash /app/entrypoint/mixer.sh preprocessing -j /app/.test/config.json &&
+          bash /app/entrypoint/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv
