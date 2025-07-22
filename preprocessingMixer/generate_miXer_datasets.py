@@ -176,7 +176,7 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     with open(arguments.json, 'r') as j:
         config = json.load(j)
-    outdir = os.path.join(
+    out_dir = os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id']
     )
@@ -254,8 +254,6 @@ if __name__ == "__main__":
     
     mfs["simF_ID"] = simF
     ####create folders:
-    #out_dir = arguments.output_dir
-    out_dir = os.path.abspath(arguments.output_dir)
     date = datetime.now().strftime("%Y%m%d-%H%M%S")
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -300,10 +298,7 @@ if __name__ == "__main__":
        dataset_test_dir = os.path.join(out_dir, f'_datasets_testing_{date}')
        if not os.path.exists(dataset_test_dir):
           os.makedirs(dataset_test_dir)
-    #sample_dir = os.path.join(dataset_dir,arguments.exp_name)
-    #if not os.path.exists(sample_dir):
-    #   os.makedirs(sample_dir)
-
+   
     ###create filenames and empty dataframes:
     if ((not train_only.empty) | (not both.empty)):
        xlr_setOut= os.path.join(dataset_dir,'ALL_SAMPLE_XLR.txt.gz')

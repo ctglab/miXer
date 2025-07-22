@@ -44,7 +44,6 @@ elif [[ "$1" = "inference" ]]; then
         # initialize variables
         JSON_FILE=""
         SAMPLES_FILE=""
-        OUTDIR=""
         XLR_FILE=""
         SEGDUP_FILE=""
         REFERENCE=""
@@ -58,8 +57,6 @@ elif [[ "$1" = "inference" ]]; then
                     JSON_FILE="$2"; shift 2;;
                 -s|--samples)
                     SAMPLES_FILE="$2"; shift 2;;
-                -o|--outdir)
-                    OUTDIR="$2"; shift 2;;
                 -x|--xlr)
                     XLR_FILE="$2"; shift 2;;
                 -sd|--segdup)
@@ -70,15 +67,15 @@ elif [[ "$1" = "inference" ]]; then
                     BW_DELTA="$2"; shift 2;;
                 *)
                     echo "Unknown option: $1"; 
-                    echo "Usage: mixer.sh inference -j <json> -s <samples> -o <outdir> [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
+                    echo "Usage: mixer.sh inference -j <json> -s <samples> [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
                     exit 1;;
             esac
         done
 
         # check required
-        if [[ -z "$JSON_FILE" || -z "$SAMPLES_FILE" || -z "$OUTDIR" ]]; then
+        if [[ -z "$JSON_FILE" || -z "$SAMPLES_FILE" ]]; then
             echo "Missing required argument."
-            echo "Usage: mixer.sh inference -j <json> -s <samples> -o <outdir> [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
+            echo "Usage: mixer.sh inference -j <json> -s <samples> [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
             exit 1
         fi
 
@@ -86,18 +83,12 @@ elif [[ "$1" = "inference" ]]; then
         echo "Running inference with:"
         echo "  JSON:    $JSON_FILE"
         echo "  samples: $SAMPLES_FILE"
-        echo "  outdir:  $OUTDIR"
         [[ -n "$XLR_FILE"     ]] && echo "  xlr:     $XLR_FILE"
         [[ -n "$SEGDUP_FILE"  ]] && echo "  segdup:  $SEGDUP_FILE"
         [[ -n "$BW_ITERATIONS" ]] && echo "  Baum-Welch iterations: $BW_ITERATIONS"
         [[ -n "$BW_DELTA"     ]] && echo "  Baum-Welch delta: $BW_DELTA"
         [[ -n "$REFERENCE"   ]] && echo "  Reference version: $REFERENCE"
 
-        # Remove trailing slash from OUTDIR if present
-        OUTDIR="${OUTDIR%/}"
-        OUTDIR_SVM="${OUTDIR}/${OUTDIR_SVM}"
-        OUTDIR_HMM="${OUTDIR}/${OUTDIR_HMM}"
-        
         python3 -u /app/preprocessingMixer/generate_miXer_datasets.py \
             -j "$JSON_FILE" \
             -s "$SAMPLES_FILE" \
@@ -108,12 +99,7 @@ elif [[ "$1" = "inference" ]]; then
         echo "Running SVM inference"
         python3 -u /app/processing/scripts/miXer_inference.py \
             -j "$JSON_FILE" 
-        
-        HMM_PATH=$(find "${OUTDIR_SVM}" -type d -name "?_SVC" | head -n 1)
-        if [[ -z "$HMM_PATH" ]]; then
-            echo "Error: Could not find a directory matching the pattern '?_SVC' in ${OUTDIR_SVM}"
-            exit 1
-        fi
+
         micromamba activate HMMR
         echo "Running HMM filtering"
         Rscript /app/processing/scripts/miXe.R \
@@ -123,11 +109,8 @@ elif [[ "$1" = "inference" ]]; then
         
         micromamba activate miXer_ml
         echo "Writing VCFs"
-        OUTDIR_VCF="${OUTDIR}/${OUTDIR_VCF}"
         python3 -u /app/processing/scripts/Vcf_maker.py \
             -j "$JSON_FILE" \
-            # -td "${OUTDIR_HMM}" \
-            # -od "${OUTDIR_VCF}" \
             ${REFERENCE:+-ref "$REFERENCE"} \
 
 else
@@ -135,11 +118,10 @@ else
     echo "Usage: mixer.sh <sub-command> [options]"
     echo "Sub-commands:"
     echo "  preprocessing -j <json_file>   Run preprocessing with the specified JSON file"
-    echo "  inference -j <json> -s <samples> -o <outdir> [-x <xlr>] [-sd <segdup>]"
+    echo "  inference -j <json> -s <samples> [-x <xlr>] [-sd <segdup>]"
     echo "Options:"
     echo "    -j, --json <file>          JSON configuration file for preprocessing"
     echo "    -s, --samples <file>       Samples file for inference"
-    echo "    -o, --outdir <directory>   Output directory for inference results"
     echo "    -x, --xlr <file>           XLR file for inference (optional)"
     echo "    -sd, --segdup <file>       SegDup file for inference (optional)"
     echo "    -bw, --baum_welch_iterations <iterations>  Baum-Welch iterations for HMM (optional)"

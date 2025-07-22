@@ -91,7 +91,6 @@ process_sample <- function(sample_name, sample_info, config) {
   
   cat("--------------------------------------------------\n")
   cat(sprintf("Processing sample: %s\n", sample_name))
-  
   result_df_save_folder <- file.path(config$output_directory, sample_name)
   dir.create(result_df_save_folder, showWarnings = FALSE, recursive = TRUE)
   
@@ -189,9 +188,9 @@ output_directory <- file.path(
 )
 dataset_directory <- file.path(
   json_data$main_outdir_host,
-  json_data$exp_id,
-  "_svm_processed_output"
+  json_data$exp_id
 )
+print(dataset_directory)
 # find subdirectories using the pattern *_SVC from the dataset_directory
 dataset_directory <- list.dirs(
   path = dataset_directory, 
@@ -202,11 +201,10 @@ dataset_directory <- dataset_directory[grepl("_SVC$", dataset_directory)]
 par_regions <- read.table(json_data$par, header=FALSE, col.names=c("Chr", "Start", "End"))
 x_aliases <- c("chrX", "ChrX", "chrx", "X", "x")
 
-dir.create(opt$output_directory, showWarnings = FALSE, recursive = TRUE)
+dir.create(output_directory, showWarnings = FALSE, recursive = TRUE)
 
 model_id <- "SVC"
 all_samples <- list.dirs(dataset_directory, full.names = TRUE, recursive = FALSE)
-
 if (isTRUE(opt$resume_execution)) {
   already_processed <- list.files(output_directory, full.names = FALSE)
   all_samples <- setdiff(all_samples, already_processed)
@@ -215,7 +213,6 @@ samples_to_process <- list()
 for (sample_path in all_samples) {
     sample <- basename(sample_path)
     noise_str <- get_py_bool_string(opt$use_noise)
-    print(noise_str)
     pattern <- paste0("^", model_id, ".*Noise_", noise_str)
     subfolder_path <- list.files(sample_path, 
                                  pattern = pattern, 
@@ -228,7 +225,7 @@ for (sample_path in all_samples) {
 cat(sprintf("Found %d samples to process.\n", length(samples_to_process)))
 
 config <- c(opt, list(json_data = json_data, par_regions = par_regions, x_aliases = x_aliases))
-
+config$output_directory <- output_directory
 if (length(samples_to_process) > 0) {
     for (i in seq_along(samples_to_process)) {
         sample_name <- names(samples_to_process)[i]

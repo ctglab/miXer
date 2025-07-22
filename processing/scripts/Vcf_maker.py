@@ -41,12 +41,10 @@ class RecordEntry(dict):
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Convert TSV file to VCF format.')
 parser.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
-# parser.add_argument('-td','--tsv_dir', type=str, required=True, help='Directory containing TSV files from HMM output')
-# parser.add_argument('-od', '--output_dir', type=str, help='Output directory for VCF files', default = None)
 parser.add_argument('-ref', '--reference', type=str, default='unspecified', help='Reference genome version (default: "unspecified")')
 parser.add_argument('-hc', '--hc_only', action='store_true', help ='Boolean flag to use only pre-filtered HC>=0.9 TSV windows file for VCF creation. False if not specified.')
 args = parser.parse_args()
-with open(args['json'], 'r') as j:
+with open(args.json, 'r') as j:
     config = json.load(j)
 # Determine VCF output directory
 tsv_dir = os.path.join(

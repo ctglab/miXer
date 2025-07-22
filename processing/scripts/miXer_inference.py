@@ -81,7 +81,9 @@ logging.info(f"PREPARED svm dir is: {PREPARED_SVM_DIR}")
 na_paths = glob.glob(PREPARED_SVM_DIR) #TODO: simplify
 logging.info(f"Detected {len(na_paths)} samples from the given folder: these are {na_paths}")
 expnames = config['exp_id']
-usecase_output_folder = os.path.join(args["test_output_folder_path"], expnames)
+usecase_output_folder = os.path.join(
+    os.path.abspath(config['main_outdir_host']),
+    config['exp_id'])
 force_test_median_normalization = str_to_bool(args["force_test_median_normalization"], "Force Test samples median normalization")
 skip_tested = str_to_bool(args["skip_sample_if_tested"], "Skip prediction if file already present")
 verbose = int(args["verbose_level"])
