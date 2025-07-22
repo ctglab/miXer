@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: ctglabcnr/mixer:merged_entrypoint
-      options: --workdir app
+      options: --workdir /app
 
     steps:
       - name: Checkout repository
