@@ -56,7 +56,6 @@ docker run --rm -v /path/to/mixer \
   -v /path/to/output_directory/ \
   ctglabcnr/mixer:latest preprocessing \
   -j /path/to/config.json \
-  -o /path/to/output_directory/ 
 ```
 
 To run the **preprocessing** using Apptainer/Singularity:
@@ -69,7 +68,6 @@ apptainer run \
   -B /path/to/output_directory/ \
   docker://ctglabcnr/mixer:latest preprocessing \
   -j /path/to/config.json \
-  -o /path/to/output_directory/ 
 ```
 
 To run the miXer **inference** step using Docker:
@@ -82,7 +80,6 @@ docker run --rm -v /path/to/mixer \
   ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
   -s /path/to/sampleList.tsv \
-  -o /path/to/output_directory  
 ```
 
 To run the miXer **inference** step using Apptainer/Singularity:
@@ -96,7 +93,6 @@ apptainer run \
   docker://ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
   -s /path/to/sampleList.tsv \
-  -o /path/to/output_directory
 ```
 
 Some additional arguments can be passed to the `inference` command:
