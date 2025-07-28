@@ -27,7 +27,9 @@
 #'
 
 #find the resource folder
-resource_folder = normalizePath(file.path(getwd(), "HMM_resources"))
+resource_folder = file.path(
+  dirname(sub("--file=", "", commandArgs(trailingOnly = FALSE)[4])),
+  "HMM_resources")
 source(normalizePath(file.path(resource_folder, "get_untrained_hmm.R")))
 source(normalizePath(file.path(resource_folder, "get_untrained_hmm_MChrX.R")))
 

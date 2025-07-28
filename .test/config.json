@@ -1,0 +1,20 @@
+{
+   "exp_id": "runtest",
+   "threads": 4,
+   "mixer_resources_dir": ".test",
+   "support_dir": ".test/ref",
+   "fasta_dir": ".test/ref",
+   "bam_dir": ".test/data/bam",
+   "sample_list": ".test/samples.tsv",
+   "target": ".test/data/SureSelect_Human_All_Exon_V7.hg38.bed",
+   "par": ".test/ref/GRC_pseudoautosomal_regions_hg38.gz",
+   "map": ".test/ref/GCA_000001405.15_GRCh38.bw",
+   "gap": ".test/ref/GapHg38.UCSC.txt",
+   "centro": ".test/ref/CentromerePosition_hg38.txt",
+   "chrom": ".test/ref/ChromosomeCoordinate_hg38.txt",
+   "ref": ".test/ref/GRCh38_GIABv3_no_alt_analysis_set_maskedGRC_decoys_MAP2K3_KMT2C_KCNJ18.fasta",
+   "premade_controls": "exxx",
+   "main_outdir_host": ".test/miXer_output"
+}
+
+

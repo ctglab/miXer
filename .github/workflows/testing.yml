@@ -1,0 +1,55 @@
+name: testing
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: 
+      image: ctglabcnr/mixer:merged_entrypoint
+      options: --workdir /app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache reference files
+        id: cache-ref
+        uses: actions/cache@v4
+        with:
+          path: .test/ref
+          # Primary key for exact match
+          key: ${{ runner.os }}-ref-v1-${{ hashFiles('.github/workflows/testing.yml') }}
+          # Fallback key for partial match
+          restore-keys: |
+            ${{ runner.os }}-ref-v1-
+
+      - name: Download reference files if not fully cached
+        if: steps.cache-ref.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          MAPPABILITY_FILE=".test/ref/k100.Bismap.MultiTrackMappability.bw"
+          FASTA_GZ_FILE=".test/ref/GRCh38_GIABv3_no_alt_analysis_set_maskedGRC_decoys_MAP2K3_KMT2C_KCNJ18.fasta.gz"
+          FASTA_FILE=".test/ref/GRCh38_GIABv3_no_alt_analysis_set_maskedGRC_decoys_MAP2K3_KMT2C_KCNJ18.fasta"
+
+          mkdir -p .test/ref
+
+          if [ ! -f "$MAPPABILITY_FILE" ]; then
+            echo "$MAPPABILITY_FILE not found, downloading..."
+            curl -fL https://hgdownload.soe.ucsc.edu/gbdb/hg38/hoffmanMappability/k100.Bismap.MultiTrackMappability.bw --output "$MAPPABILITY_FILE"
+          else
+            echo "$MAPPABILITY_FILE already exists."
+          fi
+
+          if [ ! -f "$FASTA_FILE" ]; then
+            echo "$FASTA_FILE not found, downloading..."
+            curl -fL http://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/references/GRCh38/GRCh38_GIABv3_no_alt_analysis_set_maskedGRC_decoys_MAP2K3_KMT2C_KCNJ18.fasta.gz --output "$FASTA_GZ_FILE"
+            gunzip "$FASTA_GZ_FILE"
+          else
+            echo "$FASTA_FILE already exists."
+          fi
+
+      - name: Run tests
+        run: |
+          bash /app/entrypoint/mixer.sh preprocessing -j /app/.test/config.json &&
+          bash /app/entrypoint/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv

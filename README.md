@@ -1,32 +1,135 @@
+[![testing](https://github.com/ctglab/mixer/actions/workflows/test.yml/badge.svg)](https://github.com/ctglab/mixer/actions/workflows/test.yml)
+![GitHub docker image build](https://github.com/ctglab/mixer/actions/workflows/docker.yml/badge.svg)
+
 # miXer:a Machine-learning method to detect genomic Imbalances exploiting X-chromosome Exome Reads
 
-miXer (with a capital X) is a lightweight machine learning tool designed to detect genomic deletions and duplications by exploiting the natural difference in X-chromosome copy number between male and female exomes. It builds on EXCAVATOR2 [GitHub](https://github.com/ctglab/excavator2) [![DOI](https://img.shields.io/badge/DOI-10.1093%2Fnar%2Fgkw695-blue.svg)](https://doi.org/10.1093/nar/gkw695)
+miXer (with a capital X) is a lightweight machine learning tool designed to detect genomic deletions and duplications by exploiting the natural difference in X-chromosome copy number between male and female exomes. It builds on [EXCAVATOR2](https://github.com/ctglab/excavator2) [![DOI](https://img.shields.io/badge/DOI-10.1093%2Fnar%2Fgkw695-blue.svg)](https://doi.org/10.1093/nar/gkw695)
  for data preprocessing and combines two key components: a single-exon Copy Number (CN) classifier based on Support Vector Machines (SVM), trained on data from six widely used exome sequencing kits; and a post-classification step that uses a Hidden Markov Model (HMM) for filtering and aggregation.
 
-# Setup
-To run miXer, [Docker](https://www.docker.com/) must be available. Optionally, an [Apptainer](https://apptainer.org/) image can be used to run the tool, which can be built using the previously obtained Docker image.
-## Installation
+```mermaid
+flowchart TD
+    A@{ shape: processes, label: "BAM files" } -- preprocessing --> B@{ shape: processes, label: "ReadCount data" }
+    C@{ shape: processes, label: "ReadCount data" } -- inference --> id4(SVM) --> id5(HMM) --> D@{ shape: processes, label: "VCFs" }
+```
+
+## Setup
+
+To run miXer, one of [Docker](https://www.docker.com/), [Apptainer](https://apptainer.org/) or [Singularity](https://docs.sylabs.io/guides/4.3/user-guide/) must be installed in the machine. 
 
 Clone the repository:<br>
-`git clone https://github.com/ctglab/miXer`
+```git clone https://github.com/ctglab/miXer```
 
-### Building the Docker image
+Download the support files from the [Zenodo repository](https://zenodo.org/records/15829608) and place them in a folder with reading/writing permissions. The archive contains the following files:
 
-To run miXer, a Docker image must be built using the cloned repository. Assuming to be in the recently cloned "miXer" folder, run the following:<br>
-`docker build -t mixer_docker:latest .`
+- **CentromerePosition_hgVersion.txt**: Containing the coordinates of the centromeres for the considered human genome assembly.
+- **ChromosomeCoordinate_hgVersion.txt**: Containing the coordinates of chromosomes.
+- **Gap_hgVersion.txt**: Containing gap annotations.
+- **mappability_track_hgVersion.bw**: Encodes genome-wide mappability.
+- **GRC_pseudoautosomal_regions_hgVersion.gz**: Containing the coordinates of the pseudoautosomal regions (PARs) for the considered human genome assembly.
 
-Otherwise, just pull it from DockerHub:<br>
-`docker pull ctglabcnr/mixer`
 
-### Building the Apptainer image
+The BigWig files encode genome-wide mappability for hg19 and hg38 assemblies and are required in order to annotate each target region. They were produced with the GEM mapper (Derrien et al., 2012) from the GEM suite (https://gemlibrary.sourceforge.net/), using 100 bp sliding windows and allowing up to two mismatches.
 
-Using the previously built image:<br>
-- **Step 1**: Saving the Docker image as `.tar` file: `docker save mixer_docker:latest -o /path/to/mixer_docker.tar`<br>
-- **Step 2**: Build the Apptainer image `.sif` file: `apptainer build mixer_apptainer.sif docker-archive://path/to/mixer_docker.tar`
 
-# Running miXer: Requirements and Configuration Steps
+## Running miXer: Requirements and Configuration Steps
 
-## Control Sample Requirements:
+miXer requires the following resources to be configured before running:
+
+- config.json
+- sample_sheet.tsv
+
+A draft of both files can be found in the `utils/` folder of the repository.
+
+### Executing miXer
+
+miXer analysis is composed of two main steps:
+
+- preprocessing the input data with EXCAVATOR2
+- running the miXer CNV calling algorithm
+
+To run the **preprocessing** using Docker:
+
+```sh
+docker run --rm -v /path/to/mixer \
+  -v /path/to/bam_files/ \
+  -v /path/to/resources_folder \
+  -v /path/to/output_directory/ \
+  ctglabcnr/mixer:latest preprocessing \
+  -j /path/to/config.json \
+```
+
+To run the **preprocessing** using Apptainer/Singularity:
+
+```sh
+apptainer run \
+  -B /path/to/mixer \
+  -B /path/to/bam_files/ \
+  -B /path/to/resources_folder \
+  -B /path/to/output_directory/ \
+  docker://ctglabcnr/mixer:latest preprocessing \
+  -j /path/to/config.json \
+```
+
+To run the miXer **inference** step using Docker:
+
+```sh
+docker run --rm -v /path/to/mixer \
+  -v /path/to/bam_files/ \
+  -v /path/to/resources_folder \
+  -v /path/to/output_directory/ \
+  ctglabcnr/mixer:latest inference \
+  -j /path/to/config.json \
+  -s /path/to/sampleList.tsv \
+```
+
+To run the miXer **inference** step using Apptainer/Singularity:
+
+```sh
+apptainer run \
+  -B /path/to/mixer \
+  -B /path/to/bam_files/ \
+  -B /path/to/resources_folder \
+  -B /path/to/output_directory/ \
+  docker://ctglabcnr/mixer:latest inference \
+  -j /path/to/config.json \
+  -s /path/to/sampleList.tsv \
+```
+
+Some additional arguments can be passed to the `inference` command:
+
+- `-x` : pass the XLR (X-chromosome Long Reads) file to the inference step. OPTIONAL, if not specified, the XLR file will not be used.
+- `-sd` : pass the segmental duplication file to the inference step. OPTIONAL, if not specified, the segmental duplication file will not be used.
+- `-bw` : Baum-welch iterations to run for the HMM. Default is `20`.
+- `-delta` : Baum-welch delta value. Default is `1e-9`.
+
+
+### Setup the config file
+
+The `config.json` file must be compiled with the following information:
+
+| JSON Variable Name        | Value                                                        | Meaning                                                                                       |
+|---------------------------|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `exp_id`                  | string: `experiment_name`                                    | Experiment identifier, used as name for output folder.                                        |
+| `threads`                 | int: `12`                                                    | Number of threads to use for parallel execution.                                              |
+| `mixer_resources_dir`     | string: `/path/to/resources_folder`                          | Path to miXer resource folder, containing the configuration and sequencing target files.      |
+| `support_dir`  | string: `/path/to/support_directory/`                       | Directory with EXCAVATOR2 and miXer support files (PAR regions, centromeres, gaps, etc.)                            |
+| `fasta_dir`               | string: `/path/to/fasta_reference`                           | Directory containing the reference genome FASTA file.                                         |
+| `bam_dir`                 | string: `/path/to/bam_files`                                 | Directory containing BAM input files. All . files specified in the configuration must be here. |                             |
+| `sample_list`                  | string: `sampleList.tsv`          bam                | Name of the configuration file used by miXer.                                                 |
+| `target`                  | string: `TargetFile.bed`                           | Name of target BED file.                                                                      |
+| `par`                     | string: `GRC_pseudoautosomal_regions_hgVersion.gz`                | Name of annotation file containing Pseudoautosomal Regions.                                   |
+| `map`                     | string: `mappability_track_hgVersion.bw`                                       | Name of Mappability track in BigWig format.                                                   |
+| `gap`                     | string: `Gap_hgVersion.txt`                                   | Name of UCSC gap annotation file.                                                             |
+| `centro`                  | string: `CentromerePosition_hgVersion.txt`                        | Name of Centromere coordinates file.                                                          |
+| `chrom`                   | string: `ChromosomeCoordinate_hgVersion.txt`                      | Name of file containing chromosome coordinates.                                               |
+| `ref`                     | string: `reference_genome.fasta`                                    | Name of reference genome file in FASTA format.                                                |
+| `premade_controls`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
+| `main_outdir_host`        | string: `/path/to/output_directory/`         | Path to output directory, will be created if not existing.                                   |
+
+A JSON configuration file template can be found in `utils/` folder.
+
+
+### Control Sample Requirements:
 
 - **Required control sample pool size**: **10** samples.  
   **ALL F** samples are required for CNV calling on X chromosome.  
@@ -51,16 +154,10 @@ Using the previously built image:<br>
     | Twist                  | Human Core Exome + RefSeq Panel V1.3 (Twist Bioscience, San Francisco, USA) |      36.71 | GRCh38     | Illumina HiSeq X          | 150 PE        |
     | SureSelect V2 (1000G)  | SureSelect Human All Exon V2 (Agilent Technologies, Santa Clara, USA) |          46.00 | GRCh38    | Illumina HiSeq 2000/2500  | 76 or 101 PE  |
 
-## Location of Sample BAM Files to Analyze
-miXer requires **all** sample `.bam` file to be located in the same folder.
 
-## miXer Configuration - Resources folder
-miXer expects the following files grouped inside a single folder:
-- **Sample list file**: `.tsv` file file containing details on the samples which will be analyzed.
-- **Target file**: `.bed` file containing all target regions captured by the enrichment kit used for the cohort in analysis.
-- **OPTIONAL: RData file of pre-made Control Sample Groups**: `.RData` file containing the averaged read counts of control samples previously obtained through EXCAVATOR2.
+### Sample Sheet Configuration
 
-### Sample list file structure
+The `sampleList.tsv` file must be compiled with the following information:
 
 | ID     | bamName          | Gender | sampleType |
 |--------|------------------|--------|------------|
@@ -73,83 +170,8 @@ Where:
 - **Gender**: Specify if sample is known **M**/**F** (if unknown, please write **F** — miXer will correct it automatically).
 - **sampleType**: Either **T** (Test) or **C** (Control); CNV calling will be done for **T** samples using **C** samples as controls.
 
-## miXer Configuration - Support files
-Two sets of support files are required: one for EXCAVATOR2 and one for miXer.
 
-#### EXCAVATOR2-specific support
-- **CentromerePosition_hgVersion.txt**: Containing the coordinates of the centromeres for the considered human genome assembly.
-- **ChromosomeCoordinate_hgVersion.txt**: Containing the coordinates of chromosomes.
-- **Gap_hgVersion.txt**: Containing gap annotations.
-- **mappability_track_hgVersion.bw**: Encodes genome-wide mappability.
-
-The BigWig files encode genome-wide mappability for hg19 and hg38 assemblies and are required in order to annotate each target region. They were produced with the GEM mapper (Derrien et al., 2012) from the GEM suite (https://gemlibrary.sourceforge.net/), using 100 bp sliding windows and allowing up to two mismatches.
-
-#### miXer-specific support
-- **GRC_pseudoautosomal_regions_hgVersion.gz**: Annotation track contraining PAR regions
-
-miXer expects the following files to be located together in a single directory.
-
-## miXer Configuration - EXCAVATOR2 Singularity file
-To run miXer, you must have the EXCAVATOR2 Apptainer image named exactly `excavator2.sif`. You can obtain this by pulling the official Docker image and converting it:
-
-1. **Download the Docker image**  
-
-    docker pull ctglabcnr/excavator2:latest
-2. **Build the Apptainer image** 
-
-    apptainer build excavator2.sif docker-daemon://ctglabcnr/excavator2:latest
-
-EXCAVATOR2 source code is available on [GitHub](https://github.com/ctglab/excavator2)
-
-# Running miXer: JSON Configuration file
-To run miXer, a JSON file must be compiled as such:<br>
-| JSON Variable Name        | Value                                                        | Meaning                                                                                       |
-|---------------------------|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `exp_id`                  | string: `experiment_name`                                    | Experiment identifier, used as name for output folder.                                        |
-| `threads`                 | int: `12`                                                    | Number of threads to use for parallel execution.                                              |
-| `mixer_resources_dir`     | string: `/path/to/resources_folder`                          | Path to miXer resource folder, containing the configuration and sequencing target files.      |
-| `support_dir`  | string: `/path/to/support_directory/`                       | Directory with EXCAVATOR2 and miXer support files (PAR regions, centromeres, gaps, etc.)                            |
-| `fasta_dir`               | string: `/path/to/fasta_reference`                           | Directory containing the reference genome FASTA file.                                         |
-| `bam_dir`                 | string: `/path/to/bam_files`                                 | Directory containing BAM input files. All .bam files specified in the configuration must be here. |
-| `sing_dir`                | string: `/path/to/excavator2_singularity_image`              | Path to folder containing EXCAVATOR2 `.sif` image used in miXer preprocessing.                                 |
-| `sample_list`                  | string: `sampleList.tsv`                          | Name of the configuration file used by miXer.                                                 |
-| `target`                  | string: `TargetFile.bed`                           | Name of target BED file.                                                                      |
-| `par`                     | string: `GRC_pseudoautosomal_regions_hgVersion.gz`                | Name of annotation file containing Pseudoautosomal Regions.                                   |
-| `map`                     | string: `mappability_track_hgVersion.bw`                                       | Name of Mappability track in BigWig format.                                                   |
-| `gap`                     | string: `Gap_hgVersion.txt`                                   | Name of UCSC gap annotation file.                                                             |
-| `centro`                  | string: `CentromerePosition_hgVersion.txt`                        | Name of Centromere coordinates file.                                                          |
-| `chrom`                   | string: `ChromosomeCoordinate_hgVersion.txt`                      | Name of file containing chromosome coordinates.                                               |
-| `ref`                     | string: `reference_genome.fasta`                                    | Name of reference genome file in FASTA format.                                                |
-| `ref37`                   | string: *(empty)*                                            | TODO Used only for `b37`  if `.bam` file were aligned to GRCh37 reference build.                                                                                         |
-| `premade_controls`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
-| `main_outdir_host`        | string: `/path/to/output_directory/`         | Path to output directory, will be created if not existing.                                   |
-
-A JSON configuration file template can be found in `utils/` folder.
-
-# Running miXer: Docker Image
-Once the JSON configuration file is complete, miXer can then be run using the provided `run_docker_preprocessing_and_inference.sh` bash script:
-```bash
-./path/to/utils/docker_utils/simplified_pipeline/run_docker_preprocessing_and_inference.sh <config.json> [DOCKER_IMAGE]
-```
-Where:
-- `<config.json>`: Path to the JSON configuration file (required).
-- `[DOCKER_IMAGE]`: Docker image `name:tag` to use (optional). 
-  - Defaults to `mixer_docker:latest` if omitted.
-- To use a custom image, pass it as the second argument:
-
-# Running miXer: Apptainer Image
-When running miXer with the Apptainer image, use the provided `run_apptainer_preprocessing_and_inference.sh` script:
-
-```bash
-./path/to/utils/apptainer_utils/run_apptainer_preprocessing_and_inference.sh <config.json> <apptainer_image.sif>
-```
-
-- `<config.json>`: compiled miXer JSON configuration (same schema as Docker).
-- `<apptainer_image.sif>`: Apptainer image file.
-
-# miXer Outputs
-
-miXer will output three folders, which  will be stored in the previously specified `main_outdir_host` directory:
+## miXer Outputs
 
 - **exca2_output_experiment_name**: Folder containing the full output of EXCAVATOR2 tool:
   - If control samples are provided, EXCAVATOR2 CNV calls will also be available. Otherwise, if miXer is run using a pre-made control sample RData, only the output of the DataPrepare module will be present.
@@ -160,7 +182,7 @@ miXer will output three folders, which  will be stored in the previously specifi
     - **sampleID_TARGET_hmm_bw20_PASS_ONLY_windows.bed**: PASS quality CNV windows only (i.e. CNVs with a confidence score higher than 0.9)
     - **test1_TARGET_hmm_bw20_windows.bed**: ALL CNV windows defined by miXer.
 
-## miXer CNV windows
+### miXer CNV windows
 
 Files **sampleID_TARGET_hmm_bw20_PASS_ONLY_windows.bed** and **test1_TARGET_hmm_bw20_windows.bed** will contain CNV windows defined by miXer in `.bed` format with the following structure:<br>
 | Field                    | meaning                 |
@@ -179,5 +201,4 @@ Files **sampleID_TARGET_hmm_bw20_PASS_ONLY_windows.bed** and **test1_TARGET_hmm_
 | Mean_TR_length           | Mean length of TRs in CNV window                |
 | window_mean_mappability  | Mean of TR's mappability in CNV windows                     |
 | alt_post_prob_mean       | Mean of HMM state probabilities in CNV windows     |
-
 
