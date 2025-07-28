@@ -1,4 +1,4 @@
-[![testing](https://github.com/ctglab/mixer/actions/workflows/test.yml/badge.svg)](https://github.com/ctglab/mixer/actions/workflows/test.yml)
+[![testing](https://github.com/ctglab/mixer/actions/workflows/testing.yml/badge.svg)](https://github.com/ctglab/mixer/actions/workflows/testing.yml)
 ![GitHub docker image build](https://github.com/ctglab/mixer/actions/workflows/docker.yml/badge.svg)
 
 # miXer:a Machine-learning method to detect genomic Imbalances exploiting X-chromosome Exome Reads
