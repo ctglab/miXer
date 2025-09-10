@@ -14,7 +14,7 @@ flowchart TD
 
 ## Setup
 
-To run miXer, one of [Docker](https://www.docker.com/), [Apptainer](https://apptainer.org/) or [Singularity](https://docs.sylabs.io/guides/4.3/user-guide/) must be installed in the machine. 
+To run miXer, one of [Docker](https://www.docker.com/), [Apptainer](https://apptainer.org/) or [Singularity](https://docs.sylabs.io/guides/4.3/user-guide/) must be installed on the machine. 
 
 Clone the repository:<br>
 ```git clone https://github.com/ctglab/miXer```
@@ -185,7 +185,7 @@ Where:
 ### miXer CNV windows
 
 Files **sampleID_TARGET_hmm_bw20_PASS_ONLY_windows.bed** and **test1_TARGET_hmm_bw20_windows.bed** will contain CNV windows defined by miXer in `.bed` format with the following structure:<br>
-| Field                    | meaning                 |
+| Field                    | Meaning                 |
 |--------------------------|-----------------------|
 | Chr                      | Chr                  |
 | Start                    | CNV window start coordinate             |
