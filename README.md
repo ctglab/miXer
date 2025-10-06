@@ -170,7 +170,7 @@ The `sampleList.tsv` file must be compiled with the following information:
 
 Where:
 - **ID**: Sample identifier which will be used to name miXer outputs. **MUST** not be an integer--only value.
-- **bamName**: Filename of `.bam` file for current sample, must not contain the full path to the file — only the filename.
+- **bamName**: Filename of `.bam` file for current sample.
 - **Gender**: Specify if sample is known **M**/**F** (if unknown, please write **F** — miXer will correct it automatically).
 - **sampleType**: Either **T** (Test) or **C** (Control); CNV calling will be done for **T** samples using **C** samples as controls.
 
