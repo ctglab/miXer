@@ -8,8 +8,16 @@ miXer (with a capital X) is a lightweight machine learning tool designed to dete
 
 ```mermaid
 flowchart TD
-    A@{ shape: processes, label: "BAM files" } -- preprocessing --> B@{ shape: processes, label: "ReadCount data" }
-    C@{ shape: processes, label: "ReadCount data" } -- inference --> id4(SVM) --> id5(HMM) --> D@{ shape: processes, label: "VCFs" }
+    subgraph A_PREPROC["preprocessing"]
+        EXC2["EXCAVATOR2"]
+    end
+    subgraph B_INFER["inference"]
+        SVM["SVM"]
+        HMM["HMM"]
+    end
+
+    A[/"BAM files"/] --> A_PREPROC --> B[/"ReadCount data"/]
+    C[/"ReadCount data"/] --> B_INFER --> D[/"VCFs"/]
 ```
 
 ## Setup
@@ -50,10 +58,10 @@ miXer analysis is composed of two main steps:
 To run the **preprocessing** using Docker:
 
 ```sh
-docker run --rm -v /path/to/mixer \
-  -v /path/to/bam_files/ \
+docker run --rm \
+  -v /path/to/bam_files \
   -v /path/to/resources_folder \
-  -v /path/to/output_directory/ \
+  -v /path/to/output_directory \
   ctglabcnr/mixer:latest preprocessing \
   -j /path/to/config.json \
 ```
@@ -62,10 +70,9 @@ To run the **preprocessing** using Apptainer/Singularity:
 
 ```sh
 apptainer run \
-  -B /path/to/mixer \
-  -B /path/to/bam_files/ \
+  -B /path/to/bam_files \
   -B /path/to/resources_folder \
-  -B /path/to/output_directory/ \
+  -B /path/to/output_directory \
   docker://ctglabcnr/mixer:latest preprocessing \
   -j /path/to/config.json \
 ```
@@ -73,10 +80,10 @@ apptainer run \
 To run the miXer **inference** step using Docker:
 
 ```sh
-docker run --rm -v /path/to/mixer \
-  -v /path/to/bam_files/ \
+docker run --rm \
+  -v /path/to/bam_files \
   -v /path/to/resources_folder \
-  -v /path/to/output_directory/ \
+  -v /path/to/output_directory \
   ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
   -s /path/to/sampleList.tsv \
@@ -86,10 +93,9 @@ To run the miXer **inference** step using Apptainer/Singularity:
 
 ```sh
 apptainer run \
-  -B /path/to/mixer \
-  -B /path/to/bam_files/ \
+  -B /path/to/bam_files \
   -B /path/to/resources_folder \
-  -B /path/to/output_directory/ \
+  -B /path/to/output_directory \
   docker://ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
   -s /path/to/sampleList.tsv \
@@ -97,10 +103,8 @@ apptainer run \
 
 Some additional arguments can be passed to the `inference` command:
 
-- `-x` : pass the XLR (X-chromosome Long Reads) file to the inference step. OPTIONAL, if not specified, the XLR file will not be used.
-- `-sd` : pass the segmental duplication file to the inference step. OPTIONAL, if not specified, the segmental duplication file will not be used.
-- `-bw` : Baum-welch iterations to run for the HMM. Default is `20`.
-- `-delta` : Baum-welch delta value. Default is `1e-9`.
+- `-bw` : Baum-Welch iterations to run for the HMM. Default is `20`.
+- `-delta` : Baum-Welch delta value. Default is `1e-9`.
 
 
 ### Setup the config file
