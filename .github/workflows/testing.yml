@@ -51,5 +51,5 @@ jobs:
 
       - name: Run tests
         run: |
-          bash /app/entrypoint/mixer.sh preprocessing -j /app/.test/config.json &&
-          bash /app/entrypoint/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv
+          bash /app/entrypoints/mixer.sh preprocessing -j /app/.test/config.json &&
+          bash /app/entrypoints/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv
