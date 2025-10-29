@@ -41,8 +41,8 @@ apply_hmm_single_chrom <- function(curr_data, hmm_bw_max_iter, bw_delta,
   curr_data <- droplevels(curr_data)
   curr_data_copy <- curr_data
   if (prefilter_low_mapp == TRUE) {
-    #print("Prefiltering SVM observations: removing low mappability positions for HMM training and inference")
-    curr_data <- subset(curr_data, Mappability > mapp_thr) # Keep only rows with good quality
+    #print("Prefiltering SVM observations: removing low mappability positions for HMM training and inference (exclude chrX)")
+    curr_data <- subset(curr_data, !(tolower(Chr) == "chrx") & Mappability > mapp_thr | tolower(Chr) == "chrx")
   }
   chr <- as.character(unique(curr_data$Chr))
   if (verbose){
