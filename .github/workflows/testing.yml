@@ -51,4 +51,4 @@ jobs:
       - name: Run tests
         run: |
           bash /app/entrypoints/mixer.sh preprocessing -j $GITHUB_WORKSPACE/.test/config.json &&
-          bash /app/entrypoints/mixer.sh inference -j $GITHUB_WORKSPACE/.test/config.json -s $GITHUB_WORKSPACE/.test/sample_sheet.tsv
+          bash /app/entrypoints/mixer.sh inference -j $GITHUB_WORKSPACE/.test/config.json -s $GITHUB_WORKSPACE/.test/samples.tsv
