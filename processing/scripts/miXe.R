@@ -57,7 +57,7 @@ guess_23 <- function(sample_pred, pred_col, sample_name, output_dir, x_aliases, 
     total_occurrencies <- sum(pred_counts_ordered$Freq)
     fraction_of_total <- most_frequent_num_occurrencies / total_occurrencies
     
-    if (most_frequent_prediction == -2) {
+    if (most_frequent_prediction == -1) {
       one_X_copy <- TRUE
       is_problematic <- FALSE
     } else {
