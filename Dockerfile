@@ -18,6 +18,8 @@ RUN micromamba env create -f conda_envs/linux/HMM_conda_env.yml && \
 # Since these files change often, docker will run again the later instructions
 # Without being able to use the layer caching mechanism (thus, longer image creation times)
 # Moving them after the env creation step
+# Update excavator2 environment with required packages
+RUN micromamba run -n excavator2 pip install pandas PyYAML
 COPY . /app
 
 # Copy the entry point scripts into the container

@@ -9,6 +9,8 @@ import shutil
 import glob
 import json
 import logging
+import pandas as pd
+import yaml
 
 # setup logger
 logging.basicConfig(
@@ -19,19 +21,6 @@ logging.basicConfig(
         logging.FileHandler('excavator2.log'),
         logging.StreamHandler(sys.stdout)
     ])
-
-try:
-    import pandas as pd
-except ModuleNotFoundError:
-    logging.info(f"Pandas not found. Installing in the environment..")
-    subprocess.run("python3 -m pip install pandas", shell=True)
-    import pandas as pd
-try:
-    import yaml
-except ModuleNotFoundError:
-    logging.info(f"PyYAML not found. Installing in the environment..")
-    subprocess.run("python3 -m pip install PyYAML", shell=True)
-    import yaml
 
 def guess_assembly(centromere_exca):
     ref = os.path.splitext(os.path.basename(centromere_exca))[0].split('_')[1]
