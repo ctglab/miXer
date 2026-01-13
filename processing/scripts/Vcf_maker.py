@@ -9,6 +9,7 @@ Created on Tue May 28 22:35:12 2024
 import os
 import math
 import argparse
+import re
 from datetime import datetime
 import logging
 import sys
@@ -24,6 +25,13 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ])
 
+
+def natural_sort_key(chrom):
+    return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', chrom)]
+
+# Order bed entries by chromosome (natural ordering) and then by cnv start (POS)
+def vcf_sort_key(e):
+    return (natural_sort_key(e['Chr']), int(e['Start']))
 
 #Function to apply Phred scaling
 def phred_scale(p_error):
@@ -104,7 +112,10 @@ for i in range(len(dirs)):
                 for k,v in zip(fields_keys, values):
                     bed_entry[k] = v
                 bed_entries.append(bed_entry)
-        
+    
+    #Natural ordering of bed entries
+    bed_entries.sort(key=vcf_sort_key)
+    
     #Get current date
     current_date = datetime.now().strftime('%Y%m%d')
     
