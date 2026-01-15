@@ -73,16 +73,16 @@ elif [[ "$1" = "inference" ]]; then
         done
 
         # check required
-        if [[ -z "$JSON_FILE" || -z "$SAMPLES_FILE" ]]; then
+        if [[ -z "$JSON_FILE" ]]; then
             echo "Missing required argument."
-            echo "Usage: mixer.sh inference -j <json> -s <samples> [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
+            echo "Usage: mixer.sh inference -j <json> [-s <samples>] [-x <xlr>] [-sd <segdup>] [-bw <baum_welch_iterations>] [-delta <baum_welch_delta>]"
             exit 1
         fi
 
         micromamba activate mixerPre
         echo "Running inference with:"
         echo "  JSON:    $JSON_FILE"
-        echo "  samples: $SAMPLES_FILE"
+        [[ -n "$SAMPLES_FILE" ]] && echo "  samples: $SAMPLES_FILE"
         [[ -n "$XLR_FILE"     ]] && echo "  xlr:     $XLR_FILE"
         [[ -n "$SEGDUP_FILE"  ]] && echo "  segdup:  $SEGDUP_FILE"
         [[ -n "$BW_ITERATIONS" ]] && echo "  Baum-Welch iterations: $BW_ITERATIONS"
@@ -91,7 +91,7 @@ elif [[ "$1" = "inference" ]]; then
 
         python3 -u /app/preprocessingMixer/generate_miXer_datasets.py \
             -j "$JSON_FILE" \
-            -s "$SAMPLES_FILE" \
+            ${SAMPLES_FILE:+-s "$SAMPLES_FILE"} \
             ${XLR_FILE:+-x "$XLR_FILE"} \
             ${SEGDUP_FILE:+-sd "$SEGDUP_FILE"}
 
@@ -118,7 +118,7 @@ else
     echo "Usage: mixer.sh <sub-command> [options]"
     echo "Sub-commands:"
     echo "  preprocessing -j <json_file>   Run preprocessing with the specified JSON file"
-    echo "  inference -j <json> -s <samples> [-x <xlr>] [-sd <segdup>]"
+    echo "  inference -j <json> [-s <samples>] [-x <xlr>] [-sd <segdup>]"
     echo "Options:"
     echo "    -j, --json <file>          JSON configuration file for preprocessing"
     echo "    -s, --samples <file>       Samples file for inference"

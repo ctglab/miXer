@@ -170,7 +170,7 @@ def addclass_ddup(ddup_df):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create annotated datasets for training')
     parser.add_argument('-j', '--json', help="Path to the miXer json file", required=True)
-    parser.add_argument('-s', '--samples', metavar="", required=True, help="miXer samples sheet")
+    parser.add_argument('-s', '--samples', metavar="", required=False, help="miXer samples sheet")
     parser.add_argument('-x', '--xlr', metavar="", help="OPTIONAL: XLR genes file", required=False)
     parser.add_argument('-sd', '--segdup', metavar="", help="OPTIONAL: Segmental Duplications regions file", required=False)
     arguments = parser.parse_args()
@@ -180,17 +180,33 @@ if __name__ == "__main__":
         os.path.abspath(config['main_outdir_host']),
         config['exp_id']
     )
-    # While this is so hardcoded, these are default paths created during preprocessing
-    poolF_nrc = os.path.join(
-        os.path.abspath(config['main_outdir_host']),
-        config['exp_id'],
-        "_excavator2_output",
-        "output",
-        "DataAnalysis_w50k",
-        "Control",
-        "RCNorm",
-        "Control.NRC.RData"
-    )
+
+    # Checking if the sample file is provided either via -s/--samples argument or in the JSON config ('sample_list')
+    if arguments.samples:
+        samples_file = arguments.samples
+    elif 'sample_list' in config:
+        samples_file = config['sample_list']
+    else:
+        raise ValueError("Samples file must be provided either via -s/--samples argument or in the JSON config ('sample_list')")
+    # Checking if premade_control_rdata is provided in the JSON config
+    if 'premade_control_rdata' in config:
+        poolF_nrc = config['premade_control_rdata']
+        if not os.path.exists(poolF_nrc):
+             logging.warning(f"Premade control file specified in config but not found at: {poolF_nrc}")
+        else:
+             logging.info(f"Using premade control file from config: {poolF_nrc}")
+    else:
+        # While this is so hardcoded, these are default paths created during preprocessing
+        poolF_nrc = os.path.join(
+            os.path.abspath(config['main_outdir_host']),
+            config['exp_id'],
+            "_excavator2_output",
+            "output",
+            "DataAnalysis_w50k",
+            "Control",
+            "RCNorm",
+            "Control.NRC.RData"
+        )
     samples_nrc = glob.glob(os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id'],
@@ -206,7 +222,7 @@ if __name__ == "__main__":
         print("Usage: python", sys.argv[0]," --help")
         print()
         raise ValueError("No arguments provided")
-    arguments = parser.parse_args()
+
 
     ########### DECLARE VARIABLES:
     ####inputs:
@@ -218,7 +234,7 @@ if __name__ == "__main__":
     #Ensuring that first column of target df is a string
     target_df[0] = target_df[0].astype(str)
     checkb37 = target_df[target_df[0].str.startswith(('chr'))]
-    caseNtrain_df = pd.read_table(arguments.samples, sep="\t")
+    caseNtrain_df = pd.read_table(samples_file, sep="\t")
     caseNtrain_df.sampleType = caseNtrain_df.sampleType.str.replace(' ', '').str.lower()
     caseNtrain_df.ID = caseNtrain_df.ID.astype(str)
     ##select from config files sample to process for both training and calling
