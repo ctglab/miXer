@@ -2,10 +2,10 @@
 set -e
 
 # these are suffixes for subfolders
-OUTDIR_EXCA="_excavator2_output"
-OUTDIR_SVM="_svm_processed_output"
-OUTDIR_HMM="_mixer_windows"
-OUTDIR_VCF="_mixer_vcfs"
+OUTDIR_EXCA="excavator2_output"
+OUTDIR_SVM="svm_processed_output"
+OUTDIR_HMM="mixer_windows"
+OUTDIR_VCF="mixer_vcfs"
 
 # This is intended to be the entrypoint for the miXer container.
 ascii_logo="CgogICAgICAgICAgICAgICAgICDilojilojiloggIOKWiOKWiOKWiOKWiOKWiCDilojilojilojilojiloggICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAg4paR4paR4paRICDilpHilpHilojilojilogg4paR4paR4paI4paI4paIICAgICAgICAgICAgICAgICAgICAKIOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiCAgIOKWiOKWiOKWiOKWiCAg4paR4paR4paI4paI4paIIOKWiOKWiOKWiCAgICDilojilojilojilojilojiloggIOKWiOKWiOKWiOKWiOKWiOKWiOKWiOKWiCAK4paR4paR4paI4paI4paI4paR4paR4paI4paI4paI4paR4paR4paI4paI4paIIOKWkeKWkeKWiOKWiOKWiCAgIOKWkeKWkeKWiOKWiOKWiOKWiOKWiCAgICDilojilojilojilpHilpHilojilojilojilpHilpHilojilojilojilpHilpHilojilojilogKIOKWkeKWiOKWiOKWiCDilpHilojilojilogg4paR4paI4paI4paIICDilpHilojilojiloggICAg4paI4paI4paI4paR4paI4paI4paIICDilpHilojilojilojilojilojilojiloggIOKWkeKWiOKWiOKWiCDilpHilpHilpEgCiDilpHilojilojilogg4paR4paI4paI4paIIOKWkeKWiOKWiOKWiCAg4paR4paI4paI4paIICAg4paI4paI4paIIOKWkeKWkeKWiOKWiOKWiCDilpHilojilojilojilpHilpHilpEgICDilpHilojilojiloggICAgIAog4paI4paI4paI4paI4paI4paR4paI4paI4paIIOKWiOKWiOKWiOKWiOKWiCDilojilojilojilojilogg4paI4paI4paI4paI4paIIOKWiOKWiOKWiOKWiOKWiOKWkeKWkeKWiOKWiOKWiOKWiOKWiOKWiCAg4paI4paI4paI4paI4paIICAgIArilpHilpHilpHilpHilpEg4paR4paR4paRIOKWkeKWkeKWkeKWkeKWkSDilpHilpHilpHilpHilpEg4paR4paR4paR4paR4paRIOKWkeKWkeKWkeKWkeKWkSAg4paR4paR4paR4paR4paR4paRICDilpHilpHilpHilpHilpEgICAgIAoKCgo="
@@ -89,6 +89,17 @@ elif [[ "$1" = "inference" ]]; then
         [[ -n "$BW_DELTA"     ]] && echo "  Baum-Welch delta: $BW_DELTA"
         [[ -n "$REFERENCE"   ]] && echo "  Reference version: $REFERENCE"
 
+        # Check for enable_intermediate_results_output in JSON (default to false if not present)
+        # We do this early to warn the user
+        ENABLE_INTERMEDIATE=$(python3 -c "import json, sys; config=json.load(open('$JSON_FILE')); print(str(config.get('enable_intermediate_results_output', False)).lower())")
+        
+        if [[ "$ENABLE_INTERMEDIATE" != "true" ]]; then
+             echo "WARNING: Intermediate files (datasets_testing, *_SVC) will NOT be saved."
+             echo "         To save them, set \"enable_intermediate_results_output\": true in your JSON config."
+        else
+             echo "INFO: Intermediate files will be preserved."
+        fi
+
         python3 -u /app/preprocessingMixer/generate_miXer_datasets.py \
             -j "$JSON_FILE" \
             ${SAMPLES_FILE:+-s "$SAMPLES_FILE"} \
@@ -112,6 +123,23 @@ elif [[ "$1" = "inference" ]]; then
         python3 -u /app/processing/scripts/Vcf_maker.py \
             -j "$JSON_FILE" \
             ${REFERENCE:+-ref "$REFERENCE"} \
+
+        if [[ "$ENABLE_INTERMEDIATE" != "true" ]]; then
+             echo "Cleaning up intermediate results..."
+             # Get main outdir from JSON
+             MAIN_OUTDIR=$(python3 -c "import json, sys; config=json.load(open('$JSON_FILE')); print(config['main_outdir_host'])")
+             EXP_ID=$(python3 -c "import json, sys; config=json.load(open('$JSON_FILE')); print(config['exp_id'])")
+             TARGET_DIR="${MAIN_OUTDIR}/${EXP_ID}"
+             
+             # remove datasets_testing_* directories
+             find "$TARGET_DIR" -maxdepth 1 -type d -name "datasets_testing_*" -exec rm -rf {} +
+             
+             # remove *_SVC directories
+             find "$TARGET_DIR" -maxdepth 1 -type d -name "*_SVC" -exec rm -rf {} +
+             echo "Intermediate results cleaned up."
+        else
+             echo "Preserving intermediate results."
+        fi
 
 else
     # if no valid sub-command is provided, print usage

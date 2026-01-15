@@ -58,12 +58,12 @@ with open(args.json, 'r') as j:
 tsv_dir = os.path.join(
     os.path.abspath(config['main_outdir_host']),
     config['exp_id'],
-    "_mixer_windows"
+    "mixer_windows"
 )
 output_dir = os.path.join(
     os.path.abspath(config['main_outdir_host']),
     config['exp_id'],
-    "_mixer_vcfs"
+    "mixer_vcfs"
 ) 
 # Get all subfolders in the tsv_dir and get sample names
 for _, dirs, _ in os.walk(tsv_dir):

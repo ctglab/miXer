@@ -184,7 +184,7 @@ json_data <- fromJSON(opt$json)
 output_directory <- file.path(
   json_data$main_outdir_host,
   json_data$exp_id,
-  "_mixer_windows"
+  "mixer_windows"
 )
 dataset_directory <- file.path(
   json_data$main_outdir_host,

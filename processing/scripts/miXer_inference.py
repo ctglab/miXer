@@ -74,7 +74,7 @@ with open(args['json'], 'r') as j:
 PREPARED_SVM_DIR = os.path.join(
     os.path.abspath(config['main_outdir_host']),
     config['exp_id'],
-    "_datasets_testing_*")
+    "datasets_testing_*")
 model_directory = args["model_directory"]
 num_thr = int(config["threads"])
 logging.info(f"PREPARED svm dir is: {PREPARED_SVM_DIR}")

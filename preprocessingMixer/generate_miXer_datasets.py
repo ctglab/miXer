@@ -200,7 +200,7 @@ if __name__ == "__main__":
         poolF_nrc = os.path.join(
             os.path.abspath(config['main_outdir_host']),
             config['exp_id'],
-            "_excavator2_output",
+            "excavator2_output",
             "output",
             "DataAnalysis_w50k",
             "Control",
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     samples_nrc = glob.glob(os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id'],
-        "_excavator2_output",
+        "excavator2_output",
         "output",
         "DataPrepare_w50k",
         "*",
@@ -306,12 +306,12 @@ if __name__ == "__main__":
     ####create folders:
     #create training/test set directory
     if ((not train_only.empty) | (not both.empty)):
-        dataset_dir = os.path.join(out_dir, f'_datasets_{date}')
+        dataset_dir = os.path.join(out_dir, f'datasets_{date}')
         if not os.path.exists(dataset_dir):
            os.makedirs(dataset_dir)
     #create calling dataset directory
     if ((not call_only.empty) | (not both.empty)):
-       dataset_test_dir = os.path.join(out_dir, f'_datasets_testing_{date}')
+       dataset_test_dir = os.path.join(out_dir, f'datasets_testing_{date}')
        if not os.path.exists(dataset_test_dir):
           os.makedirs(dataset_test_dir)
    

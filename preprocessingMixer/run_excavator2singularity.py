@@ -140,7 +140,7 @@ if __name__ == "__main__":
     tmp_folder = os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id'],
-        "_excavator2_output/"
+        "excavator2_output/"
     )
     if os.path.exists(tmp_folder) == False:
        os.makedirs(tmp_folder)
