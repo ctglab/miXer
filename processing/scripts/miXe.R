@@ -11,6 +11,18 @@ std_wd <- commandArgs()[1]
 def_hmm_bw_max_iter <- 20
 def_bw_delta <- 1E-9
 
+# Log file name
+dataset_log_file <- "mixerHMM.log"
+
+# Custom logging function matching Python's format
+log_message <- function(level, message) {
+  timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  formatted_message <- sprintf("%s - %s - %s", timestamp, level, message)
+  cat(formatted_message, "\n") # Print to stdout
+  cat(formatted_message, "\n", file = dataset_log_file, append = TRUE) # Append to log file
+}
+
+
 option_list = list(
   make_option(c("-j", "--json"), type="character", help="Path to the miXer json file"),
   make_option(c("-w", "--work_directory"), type="character", default=file.path(dirname(sub("--file=", "", commandArgs(trailingOnly = FALSE)[4])), "HMM_resources"), help="This script's working directory."),
@@ -81,16 +93,17 @@ guess_23 <- function(sample_pred, pred_col, sample_name, output_dir, x_aliases, 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 print_window_number <- function(windows, sample_name) {
   counts <- table(windows$Call)
-  cat(sprintf("Sample %s CNV Windows | DDEL(-2): %d | DEL(-1): %d | DUP(+1): %d | MDUP(2+): %d\n",
+  msg <- sprintf("Sample %s CNV Windows | DDEL(-2): %d | DEL(-1): %d | DUP(+1): %d | MDUP(2+): %d",
               sample_name,
               counts["-2"] %||% 0, counts["-1"] %||% 0,
-              counts["+1"] %||% 0, counts["2+"] %||% 0))
+              counts["+1"] %||% 0, counts["2+"] %||% 0)
+  log_message("INFO", msg)
 }
 
 process_sample <- function(sample_name, sample_info, config) {
   
-  cat("--------------------------------------------------\n")
-  cat(sprintf("Processing sample: %s\n", sample_name))
+  # cat("--------------------------------------------------\n")
+  log_message("INFO", sprintf("Processing sample: %s", sample_name))
   result_df_save_folder <- file.path(config$output_directory, sample_name)
   dir.create(result_df_save_folder, showWarnings = FALSE, recursive = TRUE)
   
@@ -125,6 +138,7 @@ process_sample <- function(sample_name, sample_info, config) {
             )
           }, error = function(e) {
             message("Error in chromosome: ", e$message)
+            log_message("ERROR", sprintf("Error in chromosome: %s", e$message))
             return(NULL)
           })
         }, mc.cores = cores)
@@ -161,13 +175,13 @@ process_sample <- function(sample_name, sample_info, config) {
   
   result_df <- do.call(rbind, results)
   
-  cat("Making windows from HMM results...\n")
+  log_message("INFO", "Making windows from HMM results...")
   windows <- window_maker(result_df, is_male, pred_col_name, config$par_regions, show_wt_windows = config$show_wt_windows)
   hc_windows <- subset(windows, ProbCall > 0.9)
   
-  cat(sprintf("Sample %s | Identified %d total CNV Windows\n", sample_name, nrow(windows)))
+  log_message("INFO", sprintf("Sample %s | Identified %d total CNV Windows", sample_name, nrow(windows)))
   print_window_number(windows, sample_name)
-  cat(sprintf("Sample %s | Identified %d PASS (Prob > 0.9) CNV Windows\n", sample_name, nrow(hc_windows)))
+  log_message("INFO", sprintf("Sample %s | Identified %d PASS (Prob > 0.9) CNV Windows", sample_name, nrow(hc_windows)))
   print_window_number(hc_windows, sample_name)
   
   filepath_allwindows <- file.path(result_df_save_folder, sprintf("%s_hmm_bw%d_windows.bed", sample_name, config$max_baum_welch_iterations))
@@ -190,7 +204,7 @@ dataset_directory <- file.path(
   json_data$main_outdir_host,
   json_data$exp_id
 )
-print(dataset_directory)
+log_message("INFO", sprintf("Dataset directory: %s", dataset_directory))
 # find subdirectories using the pattern *_SVC from the dataset_directory
 dataset_directory <- list.dirs(
   path = dataset_directory, 
@@ -222,7 +236,7 @@ for (sample_path in all_samples) {
         samples_to_process[[sample]] <- list(path = subfolder_path[1])
     }
 }
-cat(sprintf("Found %d samples to process.\n", length(samples_to_process)))
+log_message("INFO", sprintf("Found %d samples to process.", length(samples_to_process)))
 
 config <- c(opt, list(json_data = json_data, par_regions = par_regions, x_aliases = x_aliases))
 config$output_directory <- output_directory
@@ -234,5 +248,5 @@ if (length(samples_to_process) > 0) {
     }
 }
 
-cat("--------------------------------------------------\n")
-cat("HMM processing complete.\n")
+# cat("--------------------------------------------------\n")
+log_message("INFO", "HMM processing complete.")
