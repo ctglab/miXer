@@ -86,7 +86,6 @@ docker run --rm \
   -v /path/to/output_directory \
   ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
-  -s /path/to/sampleList.tsv \
 ```
 
 To run the miXer **inference** step using Apptainer/Singularity:
@@ -98,13 +97,35 @@ apptainer run \
   -B /path/to/output_directory \
   docker://ctglabcnr/mixer:latest inference \
   -j /path/to/config.json \
-  -s /path/to/sampleList.tsv \
 ```
-
 Some additional arguments can be passed to the `inference` command:
 
 - `-bw` : Baum-Welch iterations to run for the HMM. Default is `20`.
 - `-delta` : Baum-Welch delta value. Default is `1e-9`.
+
+An End-to-End analysis can also be run instead of the two steps above.
+
+With Docker:
+
+```sh
+docker run --rm \
+  -v /path/to/bam_files \
+  -v /path/to/resources_folder \
+  -v /path/to/output_directory \
+  ctglabcnr/mixer:latest end2end \
+  -j /path/to/config.json \
+```
+
+With Apptainer/Singularity:
+
+```sh
+apptainer run \
+  -B /path/to/bam_files \
+  -B /path/to/resources_folder \
+  -B /path/to/output_directory \
+  docker://ctglabcnr/mixer:latest end2end \
+  -j /path/to/config.json \
+```
 
 
 ### Setup the config file
@@ -114,11 +135,7 @@ The `config.json` file must be compiled with the following information:
 | JSON Variable Name        | Value                                                        | Meaning                                                                                       |
 |---------------------------|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
 | `exp_id`                  | string: `experiment_name`                                    | Experiment identifier, used as name for output folder.                                        |
-| `threads`                 | int: `12`                                                    | Number of threads to use for parallel execution.                                              |
-| `mixer_resources_dir`     | string: `/path/to/resources_folder`                          | Path to miXer resource folder, containing the configuration and sequencing target files.      |
-| `support_dir`  | string: `/path/to/support_directory/`                       | Directory with EXCAVATOR2 and miXer support files (PAR regions, centromeres, gaps, etc.)                            |
-| `fasta_dir`               | string: `/path/to/fasta_reference`                           | Directory containing the reference genome FASTA file.                                         |
-| `bam_dir`                 | string: `/path/to/bam_files`                                 | Directory containing BAM input files. All . files specified in the configuration must be here. |                             |
+| `threads`                 | int: `12`                                                    | Number of threads to use for parallel execution.                                              ||
 | `sample_list`                  | string: `sampleList.tsv`          bam                | Name of the configuration file used by miXer.                                                 |
 | `target`                  | string: `TargetFile.bed`                           | Name of target BED file.                                                                      |
 | `par`                     | string: `GRC_pseudoautosomal_regions_hgVersion.gz`                | Name of annotation file containing Pseudoautosomal Regions.                                   |
@@ -129,6 +146,7 @@ The `config.json` file must be compiled with the following information:
 | `ref`                     | string: `reference_genome.fasta`                                    | Name of reference genome file in FASTA format.                                                |
 | `premade_controls`  | string: `premadeControl.NRC.RData`                               | Precomputed RData file containing normalized read counts for control samples.                |
 | `main_outdir_host`        | string: `/path/to/output_directory/`         | Path to output directory, will be created if not existing.                                   |
+| `enable_intermediate_results_output`        | bool: `false`         | Enable intermediate results output (SVM-ready datasets and SVM-processed output).                                                        |
 
 A JSON configuration file template can be found in `utils/` folder.
 
@@ -165,12 +183,12 @@ The `sampleList.tsv` file must be compiled with the following information:
 
 | ID     | bamName          | Gender | sampleType |
 |--------|------------------|--------|------------|
-| test1  | sample_file.bam  | M      | T          |
-| ctrl1  | control1_file.bam| F      | C          |
+| test1  | /path/to/bam_files/sample_file.bam  | M      | T          |
+| ctrl1  | /path/to/bam_files/control1_file.bam| F      | C          |
 
 Where:
 - **ID**: Sample identifier which will be used to name miXer outputs. **MUST** not be an integer--only value.
-- **bamName**: Filename of `.bam` file for current sample.
+- **bamName**: Path to `.bam` file for current sample.
 - **Gender**: Specify if sample is known **M**/**F** (if unknown, please write **F** — miXer will correct it automatically).
 - **sampleType**: Either **T** (Test) or **C** (Control); CNV calling will be done for **T** samples using **C** samples as controls.
 
