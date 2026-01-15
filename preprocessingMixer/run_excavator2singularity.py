@@ -54,7 +54,12 @@ def create_target_yaml(config: dict, tmp: str, window_size=50000) -> str:
         if yaml_key == 'Assembly':
             target_dict['Reference'][yaml_key] = assembly
         else:
-            target_dict['Reference'][yaml_key] = config[json_key]
+            # check if the destination file exists
+            if os.path.exists(config[json_key]):
+                target_dict['Reference'][yaml_key] = config[json_key]
+            else:
+                raise FileNotFoundError(f"The file {os.path.abspath(config[json_key])} doesn't exists. Exiting.")
+            
     target_dict['Target']['Name'] = target_name
     target_dict['Target']['BED'] = config['target']
     target_dict['Target']['Window'] = window_size   
