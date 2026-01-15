@@ -105,6 +105,8 @@ def target_predictions(target, target_name, modelname, training_columns,
         target_copy = target_copy.join(pd.DataFrame(y_pred_prediction_probs, columns = [base_pred_proba_name]))
         
         #calculate mappability mediated SVM confidence score
+        #enforce numerical dtype to avoid typerror
+        target_copy[base_pred_proba_name] = pd.to_numeric(target_copy[base_pred_proba_name], errors='coerce')
         target_copy[confidence_column_name] = target_copy[base_pred_proba_name] * target["Mappability"]
         
         #append prediction probability columns to target dataframe
