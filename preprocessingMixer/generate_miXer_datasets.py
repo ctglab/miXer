@@ -189,13 +189,17 @@ if __name__ == "__main__":
     else:
         raise ValueError("Samples file must be provided either via -s/--samples argument or in the JSON config ('sample_list')")
     # Checking if premade_control_rdata is provided in the JSON config
-    if 'premade_control_rdata' in config:
-        poolF_nrc = config['premade_control_rdata']
-        if not os.path.exists(poolF_nrc):
-             logging.warning(f"Premade control file specified in config but not found at: {poolF_nrc}")
+    poolF_nrc = None
+    if 'premade_control_rdata' in config and config['premade_control_rdata']:
+        if os.path.exists(config['premade_control_rdata']):
+            poolF_nrc = config['premade_control_rdata']
+            logging.info(f"Using premade control file from config: {poolF_nrc}")
         else:
-             logging.info(f"Using premade control file from config: {poolF_nrc}")
-    else:
+             logging.warning(f"Premade control file specified in config but not found at: {config['premade_control_rdata']}")
+    
+    if poolF_nrc is None:
+        logging.info("No premade control file specified in config. Using EXCAVATOR2 DataAnalysis output as default.")
+        # Fallback to default path if not provided or not found
         # While this is so hardcoded, these are default paths created during preprocessing
         poolF_nrc = os.path.join(
             os.path.abspath(config['main_outdir_host']),
@@ -207,7 +211,7 @@ if __name__ == "__main__":
             "RCNorm",
             "Control.NRC.RData"
         )
-    samples_nrc = glob.glob(os.path.join(
+    search_pattern = os.path.join(
         os.path.abspath(config['main_outdir_host']),
         config['exp_id'],
         "excavator2_output",
@@ -216,7 +220,12 @@ if __name__ == "__main__":
         "*",
         "RCNorm",
         "*RData"
-    ))
+    )
+    logging.info(f"Looking for RData files with pattern: {search_pattern}")
+    samples_nrc = glob.glob(search_pattern)
+    logging.info(f"Found {len(samples_nrc)} .RData files")
+    if not samples_nrc:
+        raise FileNotFoundError(f"No .RData files found in {os.path.join(os.path.abspath(config['main_outdir_host']), config['exp_id'], 'excavator2_output', 'output', 'DataPrepare_w50k', '*', 'RCNorm')}. Check if preprocessing step completed successfully.")
     if len(sys.argv)==1:
         print()
         print("Usage: python", sys.argv[0]," --help")

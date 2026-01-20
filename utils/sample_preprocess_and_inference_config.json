@@ -9,7 +9,7 @@
    "centro": "/path/to/CentromerePosition_hg__version.txt",
    "chrom": "/path/to/ChromosomeCoordinate_hg__version.txt",
    "ref": "/path/to/name_of_hg__version_reference_file.fasta",
-   "premade_controls": "/path/to/control/data/if_present/",
+   "premade_control_rdata": "/path/to/control/data/if_present/",
    "main_outdir_host": "/path/to/mixer_outputs/",
    "enable_intermediate_results_output": "false"
 }
