@@ -155,7 +155,7 @@ for i in range(len(dirs)):
             entry['ProbCall'] = float(entry['ProbCall'])
             entry['entry_number'] = i
             entry['p_error'] = float(entry['p_error'])
-            entry['window_length'] = int(entry['window_length'])
+            entry['window_length'] = int(float(entry['window_length']))
             entry['svlen_val'] = entry['window_length']
             entry['cn_value'] = entry['CN'] if entry['CN'] != "4+" else 4  # Convert "4+" to 4
             if entry['ProbCall'] > 0.9:
