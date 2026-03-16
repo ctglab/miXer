@@ -21,7 +21,7 @@ def parallel_predictions(folder_path, target_dfs_for_thread,
         df = pd.read_csv(os.path.join(folder_path, target_df), sep="\t")
 
         # Rename columns for compatibility with target_predictions and HMM
-        df = df.rename(columns={'chrom': 'Chr', 'nrc_poolNorm': 'NRC_poolNorm'})
+        df = df.rename(columns={'chrom': 'Chr', 'NRC_poolNorm': 'NRC_poolNorm'})
 
         target_name = target_df.replace("_miXer_data.tsv", "")
 

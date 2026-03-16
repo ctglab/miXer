@@ -130,7 +130,8 @@ def annotate_target(tar, ref, mapp_bw_path, gapcen):
 def make_dataset(sample_id: str,
                  sample_df: pd.DataFrame,
                  control_pool_df: pd.DataFrame,
-                 target_annot_df: pd.DataFrame) -> pd.DataFrame:
+                 target_annot_df: pd.DataFrame,
+                 drop_offtarget: bool = True) -> pd.DataFrame:
     """
     Create a normalized dataset by aligning sample NRC values with target regions
     and normalizing using control pool NRCs. Keeps both on-target and off-target regions.
@@ -196,10 +197,9 @@ def make_dataset(sample_id: str,
         on=['chrom', 'start', 'end'],
         how='left'  # allows off-target rows to remain
     )
-
     # Step 4: Normalize and log-transform
-    merged_df['nrc_poolNorm'] = merged_df['RCNorm'] / merged_df['RCNorm_pool']
-    merged_df['nrc_poolNorm'] = np.log2(merged_df['nrc_poolNorm'].replace(0, np.nan))
+    merged_df['NRC_poolNorm'] = merged_df['RCNorm'] / merged_df['RCNorm_pool']
+    merged_df['NRC_poolNorm'] = np.log2(merged_df['NRC_poolNorm'].replace(0, np.nan))
 
     merged_df['id'] = sample_id
 
@@ -214,24 +214,26 @@ def make_dataset(sample_id: str,
     # Step 6: Final columns
     final_df = final_df[[
         'chrom', 'start', 'end', 'GC_content', 'Mappability', 'Length',
-        'nrc_poolNorm', 'INOUT'
+        'NRC_poolNorm', 'INOUT'
     ]]
 
     # Normalize the median (don't consider off target and X/Y chrs)
     nrc_median = final_df[(~final_df["chrom"].isin(["chrX", "ChrX", "chrx", "X", 
                                                     "chrY", "ChrY", "chry", "Y"])) &
-                                                    (final_df["INOUT"] != "OUT")]["nrc_poolNorm"].median()
+                                                    (final_df["INOUT"] != "OUT")]["NRC_poolNorm"].median()
     
     # Normalize the median (don't consider off target and X/Y chrs)
     nrc_median_off = final_df[(~final_df["chrom"].isin(["chrX", "ChrX", "chrx", "X", 
                                                     "chrY", "ChrY", "chry", "Y"])) &
-                                                    (final_df["INOUT"] == "OUT")]["nrc_poolNorm"].median()
+                                                    (final_df["INOUT"] == "OUT")]["NRC_poolNorm"].median()
     
 
-    #final_df['nrc_poolNorm'] = final_df['nrc_poolNorm'] - nrc_median
-    final_df["nrc_poolNorm_autosomalMedian"] = nrc_median
-    final_df["nrc_poolNorm_offtarget_autosomalMedian"] = nrc_median_off
-
+    #final_df['NRC_poolNorm'] = final_df['NRC_poolNorm'] - nrc_median
+    final_df["NRC_poolNorm_autosomalMedian"] = nrc_median
+    final_df["NRC_poolNorm_offtarget_autosomalMedian"] = nrc_median_off
+    # drop offtarget from final_df
+    if drop_offtarget:
+        final_df = final_df.loc[final_df['INOUT'] == 'IN']
     return final_df, nrc_median, nrc_median_off
 
 def normalize_by_autosomal_median(all_dataframes: Dict[str, pd.DataFrame]) -> Tuple[Dict[str, pd.DataFrame], Dict[str, str]]:
@@ -242,14 +244,14 @@ def normalize_by_autosomal_median(all_dataframes: Dict[str, pd.DataFrame]) -> Tu
     Parameters:
         all_dataframes (dict): map sample_id -> DataFrame. Each DataFrame
             must have at least these columns:
-              - 'nrc_poolNorm'                     (float)
+              - 'NRC_poolNorm'                     (float)
               - 'INOUT'                            (string: "IN" or "OUT")
-              - 'nrc_poolNorm_autosomalMedian'     (float, the on-target median)
-              - 'nrc_poolNorm_offtarget_autosomalMedian' (float, the off-target median)
+              - 'NRC_poolNorm_autosomalMedian'     (float, the on-target median)
+              - 'NRC_poolNorm_offtarget_autosomalMedian' (float, the off-target median)
 
     Returns:
         normalized_dataframes (dict): map sample_id -> DataFrame with additional
-            column "nrc_poolNorm_normalized" (float).
+            column "NRC_poolNorm_normalized" (float).
         quarantined_samples (dict): map sample_id -> quarantine reason
             (currently unused in this simplified version).
     """
@@ -259,14 +261,14 @@ def normalize_by_autosomal_median(all_dataframes: Dict[str, pd.DataFrame]) -> Tu
     # 1) Gather sample medians
     medians_dict: Dict[str, Dict[str, float]] = {}
     for sample_id, df in all_dataframes.items():
-        if "nrc_poolNorm_autosomalMedian" not in df.columns or \
-           "nrc_poolNorm_offtarget_autosomalMedian" not in df.columns:
+        if "NRC_poolNorm_autosomalMedian" not in df.columns or \
+           "NRC_poolNorm_offtarget_autosomalMedian" not in df.columns:
             # If the required columns are missing, we cannot normalize
             continue
 
         # Get the medians from the first row (they are constant for the entire DataFrame)
-        med_on  = df["nrc_poolNorm_autosomalMedian"].iloc[0]
-        med_off = df["nrc_poolNorm_offtarget_autosomalMedian"].iloc[0]
+        med_on  = df["NRC_poolNorm_autosomalMedian"].iloc[0]
+        med_off = df["NRC_poolNorm_offtarget_autosomalMedian"].iloc[0]
         medians_dict[sample_id] = {"on": med_on, "off": med_off}
 
     logging.info("Starting samples normalization")
@@ -290,13 +292,13 @@ def normalize_by_autosomal_median(all_dataframes: Dict[str, pd.DataFrame]) -> Tu
         mask_in  = df_copy["INOUT"] == "IN"
         mask_out = df_copy["INOUT"] == "OUT"
 
-        df_copy.loc[mask_in,  "nrc_poolNorm_normalized"] = df_copy.loc[mask_in,  "nrc_poolNorm"] - med_on
-        df_copy.loc[mask_out, "nrc_poolNorm_normalized"] = df_copy.loc[mask_out, "nrc_poolNorm"] - med_off
+        df_copy.loc[mask_in,  "NRC_poolNorm_normalized"] = df_copy.loc[mask_in,  "NRC_poolNorm"] - med_on
+        df_copy.loc[mask_out, "NRC_poolNorm_normalized"] = df_copy.loc[mask_out, "NRC_poolNorm"] - med_off
         
         # Print additional statistics
-        auto_in_median = df_copy[(df_copy["INOUT"] == "IN") & (~df_copy["chrom"].str.upper().isin(["CHRX", "X"]))]["nrc_poolNorm_normalized"].median()
-        auto_out_median = df_copy[(df_copy["INOUT"] == "OUT") & (~df_copy["chrom"].str.upper().isin(["CHRX", "X"]))]["nrc_poolNorm_normalized"].median()
-        chrX_median = df_copy[df_copy["chrom"].str.upper().isin(["CHRX", "X"])]["nrc_poolNorm_normalized"].median()
+        auto_in_median = df_copy[(df_copy["INOUT"] == "IN") & (~df_copy["chrom"].str.upper().isin(["CHRX", "X"]))]["NRC_poolNorm_normalized"].median()
+        auto_out_median = df_copy[(df_copy["INOUT"] == "OUT") & (~df_copy["chrom"].str.upper().isin(["CHRX", "X"]))]["NRC_poolNorm_normalized"].median()
+        chrX_median = df_copy[df_copy["chrom"].str.upper().isin(["CHRX", "X"])]["NRC_poolNorm_normalized"].median()
 
         logging.info(f"Post-normalization medians (Autosomes IN TRs | Autosomes OUT TRs | chrX TRs): {auto_in_median:.4f} / {auto_out_median:.4f} / {chrX_median:.4f}")
 
@@ -517,8 +519,14 @@ if __name__ == "__main__":
         
         final_df = norm_dict.get(file_id, mixer_data.copy())
         if file_id not in norm_dict:
-            final_df["nrc_poolNorm_normalized"] = np.nan
-            
+            final_df["NRC_poolNorm_normalized"] = np.nan
+        
+        # rename columns to match R notation
+        final_df.rename(
+            columns={'chrom': 'Chr',
+            'start': 'Start',
+            'end': 'End'},
+            inplace=True)
         final_df.to_csv(os.path.join(dataset_outdir, f"{file_id}_miXer_data.tsv"), sep="\t", index=False)
         
 
