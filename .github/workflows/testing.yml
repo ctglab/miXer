@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: ctglabcnr/mixer:merged_entrypoint
+      image: danilotat/mixer:latest
       options: --workdir /app
 
     steps:
@@ -49,7 +49,10 @@ jobs:
             echo "$FASTA_FILE already exists."
           fi
 
+      - name: Link test data into container app directory
+        run: ln -s "$GITHUB_WORKSPACE/.test" /app/.test
+
       - name: Run tests
         run: |
-          bash /app/entrypoint/mixer.sh preprocessing -j /app/.test/config.json &&
-          bash /app/entrypoint/mixer.sh inference -j /app/.test/config.json -s /app/.test/sample_sheet.tsv
+          bash /app/entrypoints/mixer.sh preprocessing -j /app/.test/config.json &&
+          bash /app/entrypoints/mixer.sh inference -j /app/.test/config.json

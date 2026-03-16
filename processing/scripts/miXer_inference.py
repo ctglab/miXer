@@ -74,13 +74,13 @@ with open(args['json'], 'r') as j:
 PREPARED_SVM_DIR = os.path.join(
     os.path.abspath(config['main_outdir_host']),
     config['exp_id'],
-    "datasets_testing_*")
+    "datasets_miXer")
 model_directory = args["model_directory"]
 num_thr = int(config["threads"])
 logging.info(f"PREPARED svm dir is: {PREPARED_SVM_DIR}")
-na_paths = glob.glob(PREPARED_SVM_DIR) #TODO: simplify
-logging.info(f"Detected {len(na_paths)} samples from the given folder: these are {na_paths}")
-expnames = config['exp_id']
+sample_files = sorted([f for f in os.listdir(PREPARED_SVM_DIR) if f.endswith("_miXer_data.tsv")]) if os.path.isdir(PREPARED_SVM_DIR) else []
+logging.info(f"Detected {len(sample_files)} samples from the given folder: these are {sample_files}")
+expnames = [f.replace("_miXer_data.tsv", "") for f in sample_files]
 usecase_output_folder = os.path.join(
     os.path.abspath(config['main_outdir_host']),
     config['exp_id'])
@@ -93,13 +93,6 @@ foldername = str(args["chrX_dataFolder"])
 if not os.path.isdir(usecase_output_folder):
     os.makedirs(usecase_output_folder)
 
-if expnames is None:
-    expnames = []
-    for i in range(len(na_paths)):
-        curr_path = na_paths[i]
-        while curr_path.endswith(os.path.sep):
-            curr_path = curr_path[:-1]
-        expnames.append(os.path.basename(curr_path) + "_Test{}".format(i) )
 logging.info(f"Generated these expnames: {expnames}")
 #reloading the model in the specified folder
 logging.info("Reloading trained model from folder {}".format(model_directory))
@@ -135,48 +128,30 @@ for item in model_scaler_tuples:
     if verbose > 0:
         logging.debug("Making predictions on usecase samples.\nApplying median normalization of test samples NRC_poolNorm.")
         logging.debug("Model: {}".format(curr_mid))
-    #Defining output folders
-    test_final_output_folders = []
-    for item in expnames:
-        test_final_output_folders.append(os.path.join(usecase_output_folder, item + "_" + curr_mid))
     ################ Inference phase
-    for i in range(len(na_paths)): #TODO cambiare nome a na_paths (target sample path?)
-        na_path = na_paths[i]
-        logging.debug(f"na path is {na_path}")
-        curr_out_folder = test_final_output_folders[i]
-        #load ID_TARGET.tzt.gz dataset if test directory is specified
-        t = []
-        if na_path is not None:
-            for parent, dirs, files in os.walk(na_path):
-                t.extend(files)
-                break
-        logging.debug(f"This would work on these files: {t}")
-        #keep only target filenames
-        t_names = [x for x in t if "TARGET.txt.gz" in x]
-        if len(t_names) != 0:
-            if verbose > 0:
-                logging.info("Samples from: {}".format(na_path))
-            #### parallelizing test samples single-exon predictions
-            if num_thr > len(t_names):
-                target_thrds = len(t_names)
-            else:
-                target_thrds = num_thr
-            thread_chunk_size = math.floor(len(t_names)/ target_thrds)
-            target_lists = split(t_names, thread_chunk_size)
-            threads = []
-            THR = 1
-            for item in target_lists:
-                threads.append(threading.Thread(target=parallel_predictions, args= (na_path, item, inferred_noise,
-                                                                                    curr_out_folder, foldername, curr_mname,
-                                                                                    training_columns, curr_scaler, curr_clf, 
-                                                                                    force_test_median_normalization,
-                                                                                    inferred_trainsamples, inferred_splitFraction, skip_tested),
-                                                name = "WES samples single-exon {} prediction thread {}".format(curr_mname, THR) ) )
-                THR = THR+1
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
+    if len(sample_files) != 0:
+        logging.info("Samples from: {}".format(PREPARED_SVM_DIR))
+        #### parallelizing test samples predictions
+        if num_thr > len(sample_files):
+            target_thrds = len(sample_files)
+        else:
+            target_thrds = num_thr
+        thread_chunk_size = math.floor(len(sample_files) / target_thrds)
+        target_lists = split(sample_files, thread_chunk_size)
+        threads = []
+        THR = 1
+        for chunk in target_lists:
+            threads.append(threading.Thread(target=parallel_predictions, args=(PREPARED_SVM_DIR, chunk, inferred_noise,
+                                                                                usecase_output_folder, curr_mid, foldername, curr_mname,
+                                                                                training_columns, curr_scaler, curr_clf,
+                                                                                force_test_median_normalization,
+                                                                                inferred_trainsamples, inferred_splitFraction, skip_tested),
+                                            name="WES samples {} prediction thread {}".format(curr_mname, THR)))
+            THR += 1
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
 
 
 
