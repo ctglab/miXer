@@ -26,6 +26,34 @@ def guess_assembly(centromere_exca):
     ref = os.path.splitext(os.path.basename(centromere_exca))[0].split('_')[1]
     return ref    
 
+def filter_target_bed(input_path, output_path, min_TR_size):
+    """
+    Remove regions with length < min_TR_size from the target BED file.
+    Preserves all original columns.
+    """
+    logging.info(f"Filtering target BED: {input_path} -> {output_path} (min_TR_size={min_TR_size})")
+    df = pd.read_csv(input_path, sep="\t", header=None, comment="#")
+    
+    # Identify if the first row is a header
+    start_row = 0
+    if any(c.isalpha() for c in str(df.iloc[0, 2])):
+        start_row = 1
+    
+    header = df.iloc[:start_row]
+    data = df.iloc[start_row:].copy()
+    
+    # Coordinates are expected in columns 1 and 2
+    data_coords = data.iloc[:, 1:3].astype(int)
+    mask = (data_coords.iloc[:, 1] - data_coords.iloc[:, 0]) >= min_TR_size
+    
+    # Reconstruct the dataframe
+    df_filtered = pd.concat([header, data[mask]])
+    
+    # Save to output_path
+    df_filtered.to_csv(output_path, sep="\t", index=False, header=False)
+    logging.info(f"Filtered target BED saved with {len(df_filtered) - start_row} regions.")
+    return output_path
+
 def create_target_yaml(config: dict, tmp: str, window_size=50000) -> str:
     """
     the structure of the yaml from excavator2 is the following
@@ -150,6 +178,19 @@ if __name__ == "__main__":
     if os.path.exists(tmp_folder) == False:
        os.makedirs(tmp_folder)
        print("EXCAVATOR2 temp folder created")
+    
+    # Pre-process target file
+    min_TR_size = config.get('min_TR_size', 10)
+    base_outdir = os.path.join(os.path.abspath(config['main_outdir_host']), config['exp_id'])
+    filtered_target_dir = os.path.join(base_outdir, f"filtered_target_TR_geq_{min_TR_size}")
+    os.makedirs(filtered_target_dir, exist_ok=True)
+    
+    filtered_target_path = os.path.join(filtered_target_dir, os.path.basename(config['target']))
+    filter_target_bed(config['target'], filtered_target_path, min_TR_size)
+    
+    # Update config to use the filtered target
+    config['target'] = filtered_target_path
+
     target_path, prepare_yaml_file = create_target_yaml(config, tmp_folder)
     dataPrepare_yaml_file = create_prepare_yaml(config, tmp_folder)
     dataAnalysis_yaml_file = create_analysis_yaml(config, tmp_folder)

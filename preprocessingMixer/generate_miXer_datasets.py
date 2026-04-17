@@ -33,13 +33,29 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 sys.excepthook = handle_exception
 
 #### fix_target: keep only chromosomal coordinates (remove additional columns if present)
-def fix_target(a):
-    target_slice=a.iloc[:,:3]
-    if any(c.isalpha() for c in str(target_slice.iloc[0,2])) == True:
-       target_slice = target_slice.drop([0]).reset_index(drop=True)
+def fix_target(a, min_TR_size=10):
+    df = a.copy()
+    
+    # Identify and handle header row
+    start_row = 0
+    if any(c.isalpha() for c in str(df.iloc[0, 2])):
+        start_row = 1
+    
+    # Coordinates are expected in columns 1 and 2
+    data = df.iloc[start_row:].copy()
+    data_coords = data.iloc[:, 1:3].astype(int)
+    mask = (data_coords.iloc[:, 1] - data_coords.iloc[:, 0]) >= min_TR_size
+    
+    # Keep only the filtered data rows
+    target_slice = data[mask].reset_index(drop=True)
+    
+    # Rename coordinates columns for consistency with downstream logic (BedTool needs names or specific structure)
+    new_cols = ['chrom', 'start', 'end'] + list(target_slice.columns[3:])
+    target_slice.columns = new_cols
+
     target_bed = BedTool.from_dataframe(target_slice).sort()
     if not target_bed or target_bed == "0":
-       raise ValueError("Check that target file is properly formatted")
+       raise ValueError(f"Check that target file is properly formatted and contains regions >= {min_TR_size} bp")
     else:
         return target_bed
 
@@ -79,10 +95,10 @@ def _read_bedtool_result(bedtool_result, columns, dtypes=None):
     except pd.errors.EmptyDataError:
         return pd.DataFrame(columns=columns)
 
-def annotate_target(tar, ref, mapp_bw_path, gapcen):
+def annotate_target(tar, ref, mapp_bw_path, gapcen, min_TR_size=10):
        
     ## GC content
-    nuc = BedTool.nucleotide_content(fix_target(tar), fi=ref)
+    nuc = BedTool.nucleotide_content(fix_target(tar, min_TR_size), fi=ref)
     df_with_gc = pd.read_table(nuc.fn, dtype={0: str, 1: int, 2: int}).loc[:, ['#1_usercol', '2_usercol', '3_usercol', '5_pct_gc']]
     df_with_gc.columns = ['chrom', 'start', 'end', 'gc']
 
@@ -343,6 +359,17 @@ if __name__ == "__main__":
     target_file = config.get('target')
     if not target_file or not os.path.exists(target_file):
         raise FileNotFoundError(f"Target file not found: {target_file}")
+    
+    # Check for filtered target version
+    min_TR_size = config.get('min_TR_size', 10)
+    filtered_target_dir = os.path.join(base_outdir, f"filtered_target_TR_geq_{min_TR_size}")
+    filtered_target_path = os.path.join(filtered_target_dir, os.path.basename(target_file))
+    
+    if os.path.exists(filtered_target_path):
+        logging.info(f"Using filtered target file found at: {filtered_target_path}")
+        target_file = filtered_target_path
+    else:
+        logging.info(f"Filtered target file not found at {filtered_target_path}. Using original target: {target_file}")
         
     # Mappability
     map_bw = config.get('map')
@@ -392,8 +419,9 @@ if __name__ == "__main__":
     centrogap_bt = BedTool.from_dataframe(centrogap).sort()
 
     # 5. Annotate Target
-    logging.info("Annotating target...")
-    annotated_target = annotate_target(target, genome_fasta, map_bw, centrogap_bt)
+    min_TR_size = config.get('min_TR_size', 10)
+    logging.info(f"Annotating target (min_TR_size={min_TR_size})...")
+    annotated_target = annotate_target(target, genome_fasta, map_bw, centrogap_bt, min_TR_size)
     logging.info("Target annotation complete.")
 
     # 6. Locate Input RData Files
